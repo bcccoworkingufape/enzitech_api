@@ -4,15 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
-
 @Entity
 @Getter
 @Setter
 @Table(name = "experiments_enzymes")
-@SQLDelete(sql = "UPDATE experiments_enzymes SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at is null")
 public class ExperimentEnzyme extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -29,15 +24,18 @@ public class ExperimentEnzyme extends BaseEntity {
     @Column(name = "variable_b")
     private Double variableB;
 
+    @Column(name = "custom_formula_curve", columnDefinition = "TEXT")
+    private String customFormulaCurve;
+
     @Column(nullable = false)
     private Double duration;
-
+    
     @Column(name = "weight_sample", nullable = false)
     private Double weightSample;
-
+    
     @Column(name = "weight_ground", nullable = false)
     private Double weightGround;
-
+    
     @Column(nullable = false)
     private Double size;
 }
