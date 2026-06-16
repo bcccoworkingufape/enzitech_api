@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -39,9 +40,10 @@ public class UserService {
         User user = new User();
         user.setName(dto.name());
         user.setEmail(dto.email());
-        
         user.setPassword(passwordEncoder.encode(dto.password()));
-        
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+
         return userRepository.save(user);
     }
 

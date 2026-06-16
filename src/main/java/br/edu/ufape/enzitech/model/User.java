@@ -36,13 +36,6 @@ public class User extends BaseEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-    
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.USER;
