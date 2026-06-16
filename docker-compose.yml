@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # CONTAINER 1: BANCO DE DADOS POSTGRESQL
+  # ==========================================
+  db:
+    image: postgres:16
+    container_name: enzitech_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: enzitech
+      POSTGRES_USER: enzitech_user
+      POSTGRES_PASSWORD: 9Jt3E1Fc5Kig
+    volumes:
+      - enzitech_pgdata:/var/lib/postgresql/data
+    networks:
+      - enzitech_network
+
+  # ==========================================
+  # CONTAINER 2: API Spring Boot
+  # ==========================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: enzitech_api
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/enzitech
+      - SPRING_DATASOURCE_USERNAME=enzitech_user
+      - SPRING_DATASOURCE_PASSWORD=9Jt3E1Fc5Kig
+      
+      # Cria/Atualiza as tabelas no banco de dados automaticamente ao iniciar
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      
+      # Autenticação JWT
+      - JWT_SECRET=a9f7cf0c38aceff0e01d6aa3db73724b5c048400c07ffff85af05bc8ecf41afa
+      
+      # Configuração de E-mail apontando para o container Postfix do servidor
+      - SMTP_HOST=postfix
+      - SMTP_PORT=1025
+      - SMTP_AUTH=false
+      - SMTP_STARTTLS=false
+      - MAIL_FROM=nao-responda@enzitech.bcccoworking.org
+    networks:
+      - enzitech_network
+      - enzitech_mail
+
+volumes:
+  enzitech_pgdata:
+
+networks:
+  enzitech_network:
+  enzitech_mail:
+    external: true
