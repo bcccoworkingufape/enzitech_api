@@ -8,6 +8,7 @@ import br.edu.ufape.enzitech.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public Page<User> findAll(Pageable pageable) {
         return userRepository.findAll(pageable);
@@ -38,9 +40,7 @@ public class UserService {
         user.setName(dto.name());
         user.setEmail(dto.email());
         
-        // TODO: Quando implementar a segurança, esta linha vai mudar para:
-        // user.setPassword(passwordEncoder.encode(dto.password()));
-        user.setPassword(dto.password()); 
+        user.setPassword(passwordEncoder.encode(dto.password()));
         
         return userRepository.save(user);
     }
@@ -59,7 +59,7 @@ public class UserService {
         user.setEmail(dto.email());
         
         if (dto.password() != null && !dto.password().isBlank()) {
-            user.setPassword(dto.password());
+            user.setPassword(passwordEncoder.encode(dto.password()));
         }
 
         return userRepository.save(user);
