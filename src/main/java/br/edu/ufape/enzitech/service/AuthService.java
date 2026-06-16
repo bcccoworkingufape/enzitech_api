@@ -1,7 +1,6 @@
 package br.edu.ufape.enzitech.service;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -60,33 +59,32 @@ public class AuthService {
     @Transactional
     public void forgotPassword(ForgotPasswordRequestDTO dto) {
         User user = userRepository.findByEmail(dto.email())
-                .orElseThrow(() -> new RuntimeException("Caso o e-mail exista em nossa base de dados, receberá um link.")); // Mensagem genérica por segurança
+                .orElseThrow(() -> new RuntimeException("Se o e-mail existir em nossa base de dados, receberá um código."));
 
         tokenRepository.deleteByUser_Id(user.getId());
 
-        String rawToken = UUID.randomUUID().toString();
+        String pinCode = String.format("%06d", new java.util.Random().nextInt(1000000));
         
         PasswordResetToken resetToken = new PasswordResetToken();
-        resetToken.setToken(rawToken);
+        resetToken.setToken(pinCode);
         resetToken.setUser(user);
         resetToken.setExpiryDate(LocalDateTime.now().plusHours(1));
         
         tokenRepository.save(resetToken);
 
-        String resetLink = frontendUrl + "/reset-password?token=" + rawToken;
-        mailService.sendPasswordResetEmail(user.getEmail(), user.getName(), resetLink);
+        mailService.sendPasswordResetEmail(user.getEmail(), user.getName(), pinCode);
     }
 
     @Transactional
     public void resetPassword(ResetPasswordRequestDTO dto) {
-        PasswordResetToken resetToken = tokenRepository.findByToken(dto.token())
-                .orElseThrow(() -> new RuntimeException("Token inválido ou não encontrado."));
+        PasswordResetToken resetToken = tokenRepository.findByTokenAndUser_Email(dto.token(), dto.email())
+                .orElseThrow(() -> new RuntimeException("Código inválido."));
 
         if (resetToken.isExpired()) {
             tokenRepository.delete(resetToken);
-            throw new RuntimeException("O token expirou. Por favor, solicite um novo.");
+            throw new RuntimeException("O código expirou. Por favor, solicite um novo.");
         }
-        
+
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
         userRepository.save(user);
