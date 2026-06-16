@@ -35,9 +35,6 @@ public class AuthService {
     private final PasswordResetTokenRepository tokenRepository;
     private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
-    
-    @Value("${api.frontend.url:http://localhost:3000}")
-    private String frontendUrl;
 
     public AuthResponseDTO login(LoginRequestDTO dto) {
         try {
