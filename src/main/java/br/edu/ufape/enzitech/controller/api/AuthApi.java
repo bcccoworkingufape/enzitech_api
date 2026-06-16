@@ -1,6 +1,8 @@
 package br.edu.ufape.enzitech.controller.api;
 
+import br.edu.ufape.enzitech.dto.request.ForgotPasswordRequestDTO;
 import br.edu.ufape.enzitech.dto.request.LoginRequestDTO;
+import br.edu.ufape.enzitech.dto.request.ResetPasswordRequestDTO;
 import br.edu.ufape.enzitech.dto.response.AuthResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,4 +19,12 @@ public interface AuthApi {
     @Operation(summary = "Login de Usuário", description = "Valida as credenciais e devolve um token JWT.")
     @PostMapping("/login")
     ResponseEntity<AuthResponseDTO> login(@RequestBody @Valid LoginRequestDTO dto);
+
+    @Operation(summary = "Esqueci a Senha", description = "Gera um token e envia um e-mail de recuperação.")
+    @PostMapping("/forgot-password")
+    ResponseEntity<Void> forgotPassword(@RequestBody @Valid ForgotPasswordRequestDTO dto);
+
+    @Operation(summary = "Redefinir Senha", description = "Valida o token e atualiza a senha.")
+    @PostMapping("/reset-password")
+    ResponseEntity<Void> resetPassword(@RequestBody @Valid ResetPasswordRequestDTO dto);
 }
