@@ -9,7 +9,7 @@ services:
     container_name: enzitech_db
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5434:5432"
     environment:
       POSTGRES_DB: enzitech
       POSTGRES_USER: enzitech_user
@@ -34,8 +34,6 @@ services:
       - "127.0.0.1:8082:8080"
     env_file:
       - .env
-    environment:
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     networks:
       - enzitech_network
       - enzitech_mail
