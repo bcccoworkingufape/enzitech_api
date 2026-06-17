@@ -8,9 +8,11 @@ import br.edu.ufape.enzitech.dto.response.AuthResponseDTO;
 import br.edu.ufape.enzitech.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@CrossOrigin(origins = "*/**")
 @RequiredArgsConstructor
 public class AuthController implements AuthApi {
 

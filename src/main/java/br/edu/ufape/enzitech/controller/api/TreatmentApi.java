@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-@RequestMapping("/api/v1/treatments")
+@RequestMapping("/treatments")
 @Tag(name = "Treatments", description = "Endpoints para gestão dos tratamentos dos experimentos")
 public interface TreatmentApi {
 

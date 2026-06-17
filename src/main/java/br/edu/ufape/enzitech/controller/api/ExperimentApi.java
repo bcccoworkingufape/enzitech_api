@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@RequestMapping("/api/v1/experiments")
+@RequestMapping("/experiments")
 @Tag(name = "Experiments", description = "Endpoints para gestão de experimentos")
 public interface ExperimentApi {
 
     @Operation(summary = "Listar Experimentos", description = "Devolve os experimentos pertencentes ao utilizador autenticado.")
-    @GetMapping("/me")
+    @GetMapping
     ResponseEntity<Page<ExperimentResponseDTO>> getMyExperiments(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
             Pageable pageable
