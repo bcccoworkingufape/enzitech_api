@@ -13,6 +13,7 @@ import net.objecthunter.exp4j.ExpressionBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -50,6 +51,8 @@ public class CalculateExperimentService {
             result.setDifferenceBetweenSamples(difference);
             result.setCurve(curve);
             result.setResult(finalResult);
+            result.setCreatedAt(LocalDateTime.now());
+            result.setUpdatedAt(LocalDateTime.now());
 
             savedResults.add(result);
         }

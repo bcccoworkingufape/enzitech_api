@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -34,6 +35,8 @@ public class EnzymeService {
         enzyme.setDescription(dto.description());
         enzyme.setFormulaCurve(dto.formulaCurve());
         enzyme.setFormulaCalculation(dto.formulaCalculation());
+        enzyme.setCreatedAt(LocalDateTime.now());
+        enzyme.setUpdatedAt(LocalDateTime.now());
         return enzymeRepository.save(enzyme);
     }
 
@@ -45,6 +48,8 @@ public class EnzymeService {
         enzyme.setDescription(dto.description());
         enzyme.setFormulaCurve(dto.formulaCurve());
         enzyme.setFormulaCalculation(dto.formulaCalculation());
+        enzyme.setCreatedAt(LocalDateTime.now());
+        enzyme.setUpdatedAt(LocalDateTime.now());
         return enzymeRepository.save(enzyme);
     }
 

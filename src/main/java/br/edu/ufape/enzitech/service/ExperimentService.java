@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -33,6 +34,8 @@ public class ExperimentService {
         experiment.setName(dto.name());
         experiment.setDescription(dto.description());
         experiment.setUser(user);
+        experiment.setCreatedAt(LocalDateTime.now());
+        experiment.setUpdatedAt(LocalDateTime.now());
         return experimentRepository.save(experiment);
     }
 
