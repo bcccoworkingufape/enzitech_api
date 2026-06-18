@@ -1,5 +1,7 @@
 package br.edu.ufape.enzitech.model;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -38,4 +40,16 @@ public class ExperimentEnzyme extends BaseEntity {
     
     @Column(nullable = false)
     private Double size;
+
+    
+    @PrePersist
+    protected void onCreate() {
+        this.setCreatedAt(LocalDateTime.now());
+        this.setUpdatedAt(LocalDateTime.now());
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.setUpdatedAt(LocalDateTime.now());
+    }
 }

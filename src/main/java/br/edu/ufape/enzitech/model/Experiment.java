@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,4 +34,15 @@ public class Experiment extends BaseEntity {
     
     @OneToMany(mappedBy = "experiment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ResultExperiment> results = new ArrayList<>();
+    
+    @PrePersist
+    protected void onCreate() {
+        this.setCreatedAt(LocalDateTime.now());
+        this.setUpdatedAt(LocalDateTime.now());
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.setUpdatedAt(LocalDateTime.now());
+    }
 }

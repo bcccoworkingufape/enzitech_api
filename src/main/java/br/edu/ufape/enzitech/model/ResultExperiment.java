@@ -3,6 +3,9 @@ package br.edu.ufape.enzitech.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
+
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -40,4 +43,17 @@ public class ResultExperiment extends BaseEntity {
 
     @Column(nullable = false)
     private Double curve;
+
+    
+    @PrePersist
+    protected void onCreate() {
+        this.setCreatedAt(LocalDateTime.now());
+        this.setUpdatedAt(LocalDateTime.now());
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.setUpdatedAt(LocalDateTime.now());
+    }
+
 }
