@@ -16,23 +16,23 @@ import java.util.UUID;
 @Tag(name = "Users", description = "Endpoints para gestão de utilizadores")
 public interface UserApi {
 
-    @Operation(summary = "Listar Utilizadores", description = "Devolve todos os utilizadores paginados.")
+    @Operation(summary = "Listar usuários", description = "Devolve todos os usuários paginados.")
     @GetMapping
     ResponseEntity<Page<UserResponseDTO>> getAllUsers(Pageable pageable);
 
-    @Operation(summary = "Procurar Utilizador", description = "Devolve um utilizador pelo seu ID.")
+    @Operation(summary = "Procurar usuário", description = "Devolve um usuário pelo seu ID.")
     @GetMapping("/{id}")
     ResponseEntity<UserResponseDTO> getUserById(@PathVariable UUID id);
 
-    @Operation(summary = "Criar Utilizador", description = "Regista um novo utilizador na base de dados.")
+    @Operation(summary = "Criar usuário", description = "Regista um novo usuário.")
     @PostMapping
     ResponseEntity<UserResponseDTO> createUser(@RequestBody @Valid UserRequestDTO dto);
 
-    @Operation(summary = "Atualizar Utilizador", description = "Atualiza os dados de um utilizador existente.")
+    @Operation(summary = "Atualizar usuário", description = "Atualiza os dados de um usuário existente.")
     @PutMapping("/{id}")
     ResponseEntity<UserResponseDTO> updateUser(@PathVariable UUID id, @RequestBody @Valid UserRequestDTO dto);
 
-    @Operation(summary = "Eliminar Utilizador", description = "Elimina um utilizador da base de dados.")
+    @Operation(summary = "Eliminar usuário", description = "Elimina um usuário da base de dados.")
     @DeleteMapping("/{id}")
     ResponseEntity<Void> deleteUser(@PathVariable UUID id);
 }
