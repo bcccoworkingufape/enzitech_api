@@ -3,9 +3,11 @@ package br.edu.ufape.enzitech.controller;
 import br.edu.ufape.enzitech.controller.api.TreatmentApi;
 import br.edu.ufape.enzitech.model.Treatment;
 import br.edu.ufape.enzitech.service.TreatmentService;
+import br.edu.ufape.enzitech.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -20,6 +22,15 @@ public class TreatmentController implements TreatmentApi {
     @Override
     public ResponseEntity<List<Treatment>> getTreatmentsByExperiment(UUID experimentId) {
         List<Treatment> treatments = treatmentService.findByExperiment(experimentId);
+        return ResponseEntity.ok(treatments);
+    }
+
+    @Override
+    public ResponseEntity<List<Treatment>> getTreatmentsByLoggedUser(Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        UUID userId = userDetails.getUser().getId();
+
+        List<Treatment> treatments = treatmentService.findByUser(userId);
         return ResponseEntity.ok(treatments);
     }
 

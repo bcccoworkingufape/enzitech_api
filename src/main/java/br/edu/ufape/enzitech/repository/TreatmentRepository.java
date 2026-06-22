@@ -11,4 +11,6 @@ import java.util.UUID;
 public interface TreatmentRepository extends JpaRepository<Treatment, UUID> {
     
     List<Treatment> findByExperimentId(UUID experimentId);
+
+    List<Treatment> findByExperimentUserId(UUID userId);
 }

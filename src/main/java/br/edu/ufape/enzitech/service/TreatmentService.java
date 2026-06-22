@@ -1,13 +1,15 @@
 package br.edu.ufape.enzitech.service;
 
+import br.edu.ufape.enzitech.model.Experiment;
 import br.edu.ufape.enzitech.model.Treatment;
+import br.edu.ufape.enzitech.repository.ExperimentRepository;
 import br.edu.ufape.enzitech.repository.ResultExperimentRepository;
 import br.edu.ufape.enzitech.repository.TreatmentRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,20 +19,29 @@ public class TreatmentService {
 
     private final TreatmentRepository treatmentRepository;
     private final ResultExperimentRepository resultExperimentRepository;
+    private final ExperimentRepository experimentRepository;
 
     public Treatment findById(UUID id) {
         return treatmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tratamento não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Tratamento não encontrado com o id: " + id));
     }
 
     public List<Treatment> findByExperiment(UUID experimentId) {
         return treatmentRepository.findByExperimentId(experimentId);
     }
+    
+    public List<Treatment> findByUser(UUID userId) {
+        return treatmentRepository.findByExperimentUserId(userId);
+    }
 
     @Transactional
     public Treatment save(Treatment treatment) {
-        treatment.setCreatedAt(LocalDateTime.now());
-        treatment.setUpdatedAt(LocalDateTime.now());
+        if (treatment.getExperiment() != null && treatment.getExperiment().getId() != null) {
+            Experiment experiment = experimentRepository.findById(treatment.getExperiment().getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Experimento vinculado não encontrado."));
+            treatment.setExperiment(experiment);
+        }
+
         return treatmentRepository.save(treatment);
     }
 
@@ -43,6 +54,6 @@ public class TreatmentService {
         }
 
         Treatment treatment = findById(id);
-        treatmentRepository.delete(treatment); //Aqui o Hibernate dá Soft Delete
+        treatmentRepository.delete(treatment);
     }
 }
