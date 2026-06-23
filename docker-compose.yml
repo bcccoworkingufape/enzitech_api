@@ -1,47 +1,58 @@
 version: '3.8'
 
 services:
-  # ==========================================
-  # CONTAINER 1: BANCO DE DADOS POSTGRESQL
-  # ==========================================
-  db:
-    image: postgres:16
-    container_name: enzitech_db
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:5434:5432"
-    environment:
-      POSTGRES_DB: enzitech
-      POSTGRES_USER: enzitech_user
-      POSTGRES_PASSWORD: 9Jt3E1Fc5Kig
-    volumes:
-      - enzitech_pgdata:/var/lib/postgresql/data
-    networks:
-      - enzitech_network
-
-  # ==========================================
-  # CONTAINER 2: API Spring Boot
-  # ==========================================
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: enzitech_api
-    restart: unless-stopped
+    image: ghcr.io/bcccoworkingufape/enzitech_api:latest
+    restart: always
+    ports:
+      - "8082:8080"
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+
+      - MAIL_HOST=postfix
+      - MAIL_PORT=25
+      - MAIL_USER=${MAIL_USER}
+      - MAIL_PASS=${MAIL_PASS}
+
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_EXPIRATION_TIME=2d
+
+      - API_VERSION=1.0.0
+      - API_URL=${API_URL}
+      - SALT_ROUNDS=10
+      - AUTH_SESSION_EXPIRATION_MINUTES=2880
+      - PORT=8080
+      - ADM_EMAIL=${ADM_EMAIL}
+      - ADM_PASSWORD=${ADM_PASSWORD}
+
+      - NODE_ENV=production
     depends_on:
       - db
-    ports:
-      - "127.0.0.1:8082:8080"
-    env_file:
-      - .env
     networks:
-      - enzitech_network
-      - enzitech_mail
+      - default
+      - mail
+
+  db:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
 
 volumes:
-  enzitech_pgdata:
+  pg_data:
 
 networks:
-  enzitech_network:
-  enzitech_mail:
+  mail:
     external: true
+    name: enzitech_mail
