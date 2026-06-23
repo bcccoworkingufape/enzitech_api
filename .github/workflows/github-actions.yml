@@ -75,12 +75,14 @@ jobs:
           port: ${{ secrets.HOSTINGER_PORT }}
           envs: GITHUB_TOKEN
           script: |
+            set -e 
+
             echo "$GITHUB_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             cd /home/enzitech/enzitech
 
-            docker-compose pull api
+            docker compose pull api
 
-            docker-compose up -d --no-deps api
+            docker compose up -d --no-deps api
 
             docker image prune -f
