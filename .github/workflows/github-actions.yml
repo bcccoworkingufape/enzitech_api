@@ -83,6 +83,9 @@ jobs:
 
             docker compose pull api
 
+            docker compose stop api
+            docker compose rm -f api
+
             docker compose up -d --no-deps api
 
             docker image prune -f
