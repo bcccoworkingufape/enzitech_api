@@ -1,47 +1,35 @@
 version: '3.8'
 
 services:
-  # ==========================================
-  # CONTAINER 1: BANCO DE DADOS POSTGRESQL
-  # ==========================================
-  db:
-    image: postgres:16
-    container_name: enzitech_db
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:5434:5432"
-    environment:
-      POSTGRES_DB: enzitech
-      POSTGRES_USER: enzitech_user
-      POSTGRES_PASSWORD: 9Jt3E1Fc5Kig
-    volumes:
-      - enzitech_pgdata:/var/lib/postgresql/data
-    networks:
-      - enzitech_network
-
-  # ==========================================
-  # CONTAINER 2: API Spring Boot
-  # ==========================================
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: enzitech_api
-    restart: unless-stopped
-    depends_on:
-      - db
+    image: ghcr.io/seu_usuario/seu_repositorio:latest
+    restart: always
     ports:
-      - "127.0.0.1:8082:8080"
+      - "8082:8080"
     env_file:
       - .env
+    depends_on:
+      - db
     networks:
-      - enzitech_network
-      - enzitech_mail
+      - default
+      - mail
+
+  db:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
 
 volumes:
-  enzitech_pgdata:
+  pg_data:
 
 networks:
-  enzitech_network:
-  enzitech_mail:
+  mail:
     external: true
+    name: enzitech_mail
