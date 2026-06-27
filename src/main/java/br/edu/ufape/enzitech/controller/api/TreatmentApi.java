@@ -1,10 +1,17 @@
 package br.edu.ufape.enzitech.controller.api;
 
+import br.edu.ufape.enzitech.dto.request.TreatmentRequestDTO;
+import br.edu.ufape.enzitech.dto.response.TreatmentResponseDTO;
 import br.edu.ufape.enzitech.model.Treatment;
+import br.edu.ufape.enzitech.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,10 +25,12 @@ public interface TreatmentApi {
     @GetMapping("/experiment/{experimentId}")
     ResponseEntity<List<Treatment>> getTreatmentsByExperiment(@PathVariable UUID experimentId);
 
-    //passar o DTO
     @Operation(summary = "Criar Tratamento", description = "Regista um novo tratamento na base de dados.")
     @PostMapping
-    ResponseEntity<Treatment> createTreatment(@RequestBody Treatment treatment);
+    ResponseEntity<TreatmentResponseDTO> createTreatment(
+            @RequestBody @Valid TreatmentRequestDTO dto,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 
     @Operation(summary = "Listar Tratamentos do usuário logado", description = "Devolve todos os tratamentos associados ao usuário logado.")
     @GetMapping("/user")

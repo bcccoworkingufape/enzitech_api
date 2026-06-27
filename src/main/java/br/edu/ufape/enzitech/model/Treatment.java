@@ -31,9 +31,12 @@ public class Treatment extends BaseEntity {
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "experiment_id", nullable = false)
-    private Experiment experiment;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "experiment_id", nullable = true)
+    private Experiment experiment;
     @PrePersist
     protected void onCreate() {
         this.setCreatedAt(LocalDateTime.now());

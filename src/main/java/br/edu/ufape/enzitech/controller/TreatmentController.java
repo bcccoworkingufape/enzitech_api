@@ -1,6 +1,8 @@
 package br.edu.ufape.enzitech.controller;
 
 import br.edu.ufape.enzitech.controller.api.TreatmentApi;
+import br.edu.ufape.enzitech.dto.request.TreatmentRequestDTO;
+import br.edu.ufape.enzitech.dto.response.TreatmentResponseDTO;
 import br.edu.ufape.enzitech.model.Treatment;
 import br.edu.ufape.enzitech.service.TreatmentService;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
@@ -35,9 +37,10 @@ public class TreatmentController implements TreatmentApi {
     }
 
     @Override
-    public ResponseEntity<Treatment> createTreatment(Treatment treatment) {
-        Treatment savedTreatment = treatmentService.save(treatment);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedTreatment);
+    public ResponseEntity<TreatmentResponseDTO> createTreatment(TreatmentRequestDTO dto, CustomUserDetails userDetails) {
+        Treatment savedTreatment = treatmentService.create(dto, userDetails.getUser());
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(TreatmentResponseDTO.fromEntity(savedTreatment));
     }
 
     @Override

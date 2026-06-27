@@ -1,7 +1,9 @@
 package br.edu.ufape.enzitech.service;
 
+import br.edu.ufape.enzitech.dto.request.TreatmentRequestDTO;
 import br.edu.ufape.enzitech.model.Experiment;
 import br.edu.ufape.enzitech.model.Treatment;
+import br.edu.ufape.enzitech.model.User;
 import br.edu.ufape.enzitech.repository.ExperimentRepository;
 import br.edu.ufape.enzitech.repository.ResultExperimentRepository;
 import br.edu.ufape.enzitech.repository.TreatmentRepository;
@@ -31,7 +33,17 @@ public class TreatmentService {
     }
     
     public List<Treatment> findByUser(UUID userId) {
-        return treatmentRepository.findByExperimentUserId(userId);
+        return treatmentRepository.findByUserId(userId); 
+    }
+
+    @Transactional
+    public Treatment create(TreatmentRequestDTO dto, User user) {
+        Treatment treatment = new Treatment();
+        treatment.setName(dto.name());
+        treatment.setDescription(dto.description());
+        treatment.setUser(user);
+
+        return treatmentRepository.save(treatment);
     }
 
     @Transactional
