@@ -37,6 +37,7 @@ public class Treatment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "experiment_id", nullable = true)
     private Experiment experiment;
+    
     @PrePersist
     protected void onCreate() {
         this.setCreatedAt(LocalDateTime.now());

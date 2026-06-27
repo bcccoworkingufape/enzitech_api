@@ -15,7 +15,7 @@ public record TreatmentResponseDTO(
                 treatment.getId(),
                 treatment.getName(),
                 treatment.getDescription(),
-                treatment.getExperiment().getId()
+                treatment.getExperiment() != null ? treatment.getExperiment().getId() : null
         );
     }
 }
