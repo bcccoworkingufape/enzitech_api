@@ -1,6 +1,8 @@
 package br.edu.ufape.enzitech.dto.response;
 
 import br.edu.ufape.enzitech.model.Enzyme;
+
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record EnzymeResponseDTO(
@@ -9,7 +11,9 @@ public record EnzymeResponseDTO(
         String type,
         String description,
         String formulaCurve,
-        String formulaCalculation
+        String formulaCalculation,
+        LocalDateTime createAt,
+        LocalDateTime updateAt
 ) {
     public static EnzymeResponseDTO fromEntity(Enzyme enzyme) {
         return new EnzymeResponseDTO(
@@ -18,7 +22,9 @@ public record EnzymeResponseDTO(
                 enzyme.getType(),
                 enzyme.getDescription(),
                 enzyme.getFormulaCurve(),
-                enzyme.getFormulaCalculation()
+                enzyme.getFormulaCalculation(),
+                enzyme.getCreatedAt(),
+                enzyme.getUpdatedAt()
         );
     }
 }
