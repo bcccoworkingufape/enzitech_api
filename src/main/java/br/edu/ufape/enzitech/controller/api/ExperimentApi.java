@@ -1,5 +1,6 @@
 package br.edu.ufape.enzitech.controller.api;
 
+import br.edu.ufape.enzitech.dto.request.CalculateExperimentRequestDTO;
 import br.edu.ufape.enzitech.dto.request.ExperimentRequestDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResponseDTO;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
@@ -47,4 +48,11 @@ public interface ExperimentApi {
     @Operation(summary = "Deletar Experimento", description = "Faz o soft delete do experimento.")
     @DeleteMapping("/{id}")
     ResponseEntity<Void> deleteExperiment(@PathVariable UUID id);
+
+    @Operation(summary = "Calcular Resultados", description = "Calcula e guarda os resultados de um experimento com base na enzima e no tratamento informados.")
+    @PostMapping("/{id}/calculate")
+    ResponseEntity<Void> calculateExperiment(
+            @PathVariable UUID id,
+            @RequestBody @Valid CalculateExperimentRequestDTO dto
+    );
 }

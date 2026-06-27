@@ -1,10 +1,12 @@
 package br.edu.ufape.enzitech.controller;
 
 import br.edu.ufape.enzitech.controller.api.ExperimentApi;
+import br.edu.ufape.enzitech.dto.request.CalculateExperimentRequestDTO;
 import br.edu.ufape.enzitech.dto.request.ExperimentRequestDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResponseDTO;
 import br.edu.ufape.enzitech.model.Experiment;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
+import br.edu.ufape.enzitech.service.CalculateExperimentService;
 import br.edu.ufape.enzitech.service.ExperimentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,6 +22,9 @@ import java.util.UUID;
 public class ExperimentController implements ExperimentApi {
 
     private final ExperimentService experimentService;
+
+    private final CalculateExperimentService calculateExperimentService;
+
 
     @Override
     public ResponseEntity<Page<ExperimentResponseDTO>> getMyExperiments(CustomUserDetails userDetails, Pageable pageable) {
@@ -52,5 +57,12 @@ public class ExperimentController implements ExperimentApi {
     public ResponseEntity<Void> deleteExperiment(UUID id) {
         experimentService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> calculateExperiment(UUID id, CalculateExperimentRequestDTO dto) {
+        calculateExperimentService.calculateAndSaveResults(id, dto);
+        
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
