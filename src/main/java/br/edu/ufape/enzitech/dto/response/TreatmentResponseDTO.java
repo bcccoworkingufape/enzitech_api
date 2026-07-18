@@ -1,13 +1,16 @@
 package br.edu.ufape.enzitech.dto.response;
 
 import br.edu.ufape.enzitech.model.Treatment;
+
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record TreatmentResponseDTO(
         UUID id,
         String name,
         String description,
-        UUID experimentId
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
     
     public static TreatmentResponseDTO fromEntity(Treatment treatment) {
@@ -15,7 +18,8 @@ public record TreatmentResponseDTO(
                 treatment.getId(),
                 treatment.getName(),
                 treatment.getDescription(),
-                treatment.getExperiment() != null ? treatment.getExperiment().getId() : null
+                treatment.getCreatedAt(),
+                treatment.getUpdatedAt()
         );
     }
 }

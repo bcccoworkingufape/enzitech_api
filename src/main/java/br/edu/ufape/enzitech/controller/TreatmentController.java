@@ -4,12 +4,11 @@ import br.edu.ufape.enzitech.controller.api.TreatmentApi;
 import br.edu.ufape.enzitech.dto.request.TreatmentRequestDTO;
 import br.edu.ufape.enzitech.dto.response.TreatmentResponseDTO;
 import br.edu.ufape.enzitech.model.Treatment;
-import br.edu.ufape.enzitech.service.TreatmentService;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
+import br.edu.ufape.enzitech.service.TreatmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -22,17 +21,22 @@ public class TreatmentController implements TreatmentApi {
     private final TreatmentService treatmentService;
 
     @Override
-    public ResponseEntity<List<Treatment>> getTreatmentsByExperiment(UUID experimentId) {
-        List<Treatment> treatments = treatmentService.findByExperiment(experimentId);
+    public ResponseEntity<List<TreatmentResponseDTO>> getTreatmentsByExperiment(UUID experimentId) {
+        List<TreatmentResponseDTO> treatments = treatmentService.findByExperiment(experimentId)
+                .stream()
+                .map(TreatmentResponseDTO::fromEntity)
+                .toList();
         return ResponseEntity.ok(treatments);
     }
 
     @Override
-    public ResponseEntity<List<Treatment>> getTreatmentsByLoggedUser(Authentication authentication) {
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+    public ResponseEntity<List<TreatmentResponseDTO>> getTreatmentsByLoggedUser(CustomUserDetails userDetails) {
         UUID userId = userDetails.getUser().getId();
-
-        List<Treatment> treatments = treatmentService.findByUser(userId);
+        List<TreatmentResponseDTO> treatments = treatmentService.findByUser(userId)
+                .stream()
+                .map(TreatmentResponseDTO::fromEntity)
+                .toList();
+                
         return ResponseEntity.ok(treatments);
     }
 
@@ -40,7 +44,8 @@ public class TreatmentController implements TreatmentApi {
     public ResponseEntity<TreatmentResponseDTO> createTreatment(TreatmentRequestDTO dto, CustomUserDetails userDetails) {
         Treatment savedTreatment = treatmentService.create(dto, userDetails.getUser());
         
-        return ResponseEntity.status(HttpStatus.CREATED).body(TreatmentResponseDTO.fromEntity(savedTreatment));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(TreatmentResponseDTO.fromEntity(savedTreatment));
     }
 
     @Override
