@@ -281,7 +281,7 @@ public CalculateExperimentResponseDTO calculatePreview(UUID experimentId, Calcul
                             config.getVariableB(),
                             r.getCurve(),
                             0.0,
-                            config.getDuration(),
+                            config.getDuration().intValue(),
                             config.getSize(),
                             config.getWeightSample(),
                             r.getResult()

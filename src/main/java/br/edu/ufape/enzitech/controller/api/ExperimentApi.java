@@ -20,6 +20,7 @@ import br.edu.ufape.enzitech.dto.response.CalculateExperimentResponseDTO;
 import br.edu.ufape.enzitech.dto.response.EnzymeResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentPaginationResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResponseDTO;
+import br.edu.ufape.enzitech.dto.response.ExperimentResultWrapperDTO;
 import br.edu.ufape.enzitech.dto.response.TotalResultExperimentDTO;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -82,5 +83,5 @@ public interface ExperimentApi {
 
     @Operation(summary = "Obter Resultado Total do Experimento")
     @GetMapping("/get-total-result/{id}")
-    ResponseEntity<List<TotalResultExperimentDTO>> getTotalResult(@PathVariable UUID id);
+    ResponseEntity<ExperimentResultWrapperDTO> getTotalResult(@PathVariable UUID id);
 }

@@ -12,7 +12,7 @@ public record TotalResultDataDTO(
         Double variableB,
         Double curve,
         Double correctionFactor, 
-        Double time,             
+        Integer time,             
         Double volume,           
         Double weightSample,
         Double result
