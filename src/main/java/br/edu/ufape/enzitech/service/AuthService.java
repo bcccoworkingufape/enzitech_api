@@ -57,18 +57,27 @@ public class AuthService {
         User user = userRepository.findByEmail(dto.email())
                 .orElseThrow(() -> new RuntimeException("Se o e-mail existir em nossa base de dados, receberá um código."));
 
-        tokenRepository.deleteByUser_Id(user.getId());
-
         String pinCode = String.format("%06d", new java.util.Random().nextInt(1000000));
-        
-        PasswordResetToken resetToken = new PasswordResetToken();
+
+        PasswordResetToken resetToken = tokenRepository.findByUser(user).orElse(new PasswordResetToken());
+
         resetToken.setToken(pinCode);
         resetToken.setUser(user);
         resetToken.setExpiryDate(LocalDateTime.now().plusHours(1));
-        
+
+        if (resetToken.getId() == null) {
+            resetToken.setCreatedAt(LocalDateTime.now());
+        }
+
+        resetToken.setUpdatedAt(LocalDateTime.now());
+
         tokenRepository.save(resetToken);
 
         mailService.sendPasswordResetEmail(user.getEmail(), user.getName(), pinCode);
+        
+        System.out.println("=========================================");
+        System.out.println("🔐 PIN GERADO PARA TESTE LOCAL: " + pinCode);
+        System.out.println("=========================================");
     }
 
     @Transactional
@@ -82,7 +91,14 @@ public class AuthService {
         }
 
         User user = resetToken.getUser();
+
+        if (passwordEncoder.matches(dto.newPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("A nova senha não pode ser igual à senha atual.");
+        }
+
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
+        user.setCredentialsUpdatedAt(LocalDateTime.now());
+
         userRepository.save(user);
 
         tokenRepository.delete(resetToken);
