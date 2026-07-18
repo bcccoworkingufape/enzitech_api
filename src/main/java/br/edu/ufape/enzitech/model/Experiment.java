@@ -28,13 +28,27 @@ public class Experiment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @OneToMany(mappedBy = "experiment", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Treatment> treatments = new ArrayList<>();
     
     @OneToMany(mappedBy = "experiment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ResultExperiment> results = new ArrayList<>();
+
+    @OneToMany(mappedBy = "experiment")
+    private List<ExperimentEnzyme> experimentEnzymes;
     
+    @Column(nullable = false)
+        private Integer repetitions;
+
+        @Column(columnDefinition = "NUMERIC(5,2) DEFAULT 0.00")
+        private Double progress;
+
+    @ManyToMany
+    @JoinTable(
+        name = "experiments_processes",
+        joinColumns = @JoinColumn(name = "experimentId", referencedColumnName = "id"),
+        inverseJoinColumns = @JoinColumn(name = "processId", referencedColumnName = "id")
+    )
+    private List<Treatment> processes;
+
     @PrePersist
     protected void onCreate() {
         this.setCreatedAt(LocalDateTime.now());

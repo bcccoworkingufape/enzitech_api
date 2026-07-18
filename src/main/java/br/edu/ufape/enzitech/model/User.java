@@ -41,6 +41,13 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Role role = Role.USER;
 
+    @Column(name = "credentials_updated_at")
+    private LocalDateTime credentialsUpdatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+
     @PrePersist
     protected void onCreate() {
         this.setCreatedAt(LocalDateTime.now());

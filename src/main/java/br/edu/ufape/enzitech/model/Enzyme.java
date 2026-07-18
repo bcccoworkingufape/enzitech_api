@@ -27,13 +27,19 @@ public class Enzyme extends BaseEntity {
     @Column(nullable = false)
     private String type;
 
+    @Column(nullable = false)
+    private Double variableA;
+
+    @Column(nullable = false)
+    private Double variableB;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "formula_curve", nullable = false)
+    @Column(name = "formula_curve")
     private String formulaCurve;
 
-    @Column(name = "formula_calculation", nullable = false)
+    @Column(name = "formula_calculation")
     private String formulaCalculation;
 
     @PrePersist
