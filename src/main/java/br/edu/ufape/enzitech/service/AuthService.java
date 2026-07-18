@@ -74,10 +74,6 @@ public class AuthService {
         tokenRepository.save(resetToken);
 
         mailService.sendPasswordResetEmail(user.getEmail(), user.getName(), pinCode);
-        
-        System.out.println("=========================================");
-        System.out.println("🔐 PIN GERADO PARA TESTE LOCAL: " + pinCode);
-        System.out.println("=========================================");
     }
 
     @Transactional
