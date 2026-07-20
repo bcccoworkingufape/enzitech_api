@@ -23,6 +23,7 @@ Desenvolvido com foco em escalabilidade e segurança, este projeto serve como n�
 * `POST /auth/login` - Autenticação e geração do token JWT.
 * `POST /auth/forgot-password` - Solicitação de recuperação de senha.
 * `POST /auth/reset-password` - Redefinição de senha utilizando o token de recuperação.
+* `POST /auth/verify-pin` - Verificação do PIN de recuperação.
 
 ### 👤 Usuários (`/users`)
 * `GET /users` - Lista os usuários cadastrados (paginado).
