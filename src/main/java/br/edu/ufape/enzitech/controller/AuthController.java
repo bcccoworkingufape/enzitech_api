@@ -2,6 +2,7 @@ package br.edu.ufape.enzitech.controller;
 
 import br.edu.ufape.enzitech.controller.api.AuthApi;
 import br.edu.ufape.enzitech.dto.request.ForgotPasswordRequestDTO;
+import br.edu.ufape.enzitech.dto.request.VerifyPinRequestDTO;
 import br.edu.ufape.enzitech.dto.request.LoginRequestDTO;
 import br.edu.ufape.enzitech.dto.request.ResetPasswordRequestDTO;
 import br.edu.ufape.enzitech.dto.response.AuthResponseDTO;
@@ -9,6 +10,7 @@ import br.edu.ufape.enzitech.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -33,5 +35,11 @@ public class AuthController implements AuthApi {
     public ResponseEntity<Void> resetPassword(ResetPasswordRequestDTO dto) {
         authService.resetPassword(dto);
         return ResponseEntity.ok().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> verifyPin(VerifyPinRequestDTO dto) {
+        authService.verifyPin(dto.getEmail(), dto.getToken());
+        return ResponseEntity.ok().build(); // Retorna 200 OK se for válido
     }
 }

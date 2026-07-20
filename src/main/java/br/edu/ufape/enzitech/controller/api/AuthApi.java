@@ -1,6 +1,7 @@
 package br.edu.ufape.enzitech.controller.api;
 
 import br.edu.ufape.enzitech.dto.request.ForgotPasswordRequestDTO;
+import br.edu.ufape.enzitech.dto.request.VerifyPinRequestDTO;
 import br.edu.ufape.enzitech.dto.request.LoginRequestDTO;
 import br.edu.ufape.enzitech.dto.request.ResetPasswordRequestDTO;
 import br.edu.ufape.enzitech.dto.response.AuthResponseDTO;
@@ -27,4 +28,8 @@ public interface AuthApi {
     @Operation(summary = "Redefinir Senha", description = "Valida o token e atualiza a senha.")
     @PostMapping("/reset-password")
     ResponseEntity<Void> resetPassword(@RequestBody @Valid ResetPasswordRequestDTO dto);
+
+    @Operation(summary = "Verificar PIN", description = "Verifica a validade do código de recuperação.")
+    @PostMapping("/verify-pin")
+    ResponseEntity<Void> verifyPin(@RequestBody @Valid VerifyPinRequestDTO dto);
 }

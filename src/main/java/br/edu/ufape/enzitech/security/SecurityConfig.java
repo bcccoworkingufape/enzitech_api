@@ -37,6 +37,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/users").permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/auth/forgot-password", "/auth/verify-pin", "/auth/reset-password").permitAll()
                 .anyRequest().authenticated()
         )
         .exceptionHandling(exceptions -> exceptions

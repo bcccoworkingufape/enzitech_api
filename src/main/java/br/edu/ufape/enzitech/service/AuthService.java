@@ -2,12 +2,14 @@ package br.edu.ufape.enzitech.service;
 
 import java.time.LocalDateTime;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import br.edu.ufape.enzitech.dto.request.ForgotPasswordRequestDTO;
 import br.edu.ufape.enzitech.dto.request.LoginRequestDTO;
@@ -79,17 +81,17 @@ public class AuthService {
     @Transactional
     public void resetPassword(ResetPasswordRequestDTO dto) {
         PasswordResetToken resetToken = tokenRepository.findByTokenAndUser_Email(dto.token(), dto.email())
-                .orElseThrow(() -> new RuntimeException("Código inválido."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código inválido."));
 
         if (resetToken.isExpired()) {
             tokenRepository.delete(resetToken);
-            throw new RuntimeException("O código expirou. Por favor, solicite um novo.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O código expirou. Por favor, solicite um novo.");
         }
 
         User user = resetToken.getUser();
 
         if (passwordEncoder.matches(dto.newPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("A nova senha não pode ser igual à senha atual.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"A nova senha não pode ser igual à senha atual.");
         }
 
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
@@ -98,5 +100,14 @@ public class AuthService {
         userRepository.save(user);
 
         tokenRepository.delete(resetToken);
+    }
+
+    public void verifyPin(String email, String token) {
+        PasswordResetToken resetToken = tokenRepository.findByTokenAndUser_Email(token, email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código inválido ou não encontrado."));
+
+        if (resetToken.isExpired()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O código expirou. Por favor, solicite um novo.");
+        }
     }
 }
