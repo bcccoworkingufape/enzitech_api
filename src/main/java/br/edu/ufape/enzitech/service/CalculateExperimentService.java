@@ -1,7 +1,7 @@
 package br.edu.ufape.enzitech.service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -10,25 +10,24 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.edu.ufape.enzitech.dto.request.CalculateExperimentRequestDTO;
-import br.edu.ufape.enzitech.dto.request.ExperimentDataRequestDTO;
-import br.edu.ufape.enzitech.dto.response.CalculateExperimentResponseDTO;
+import br.edu.ufape.enzitech.dto.request.SaveRepetitionRequestDTO;
+import br.edu.ufape.enzitech.dto.response.ExperimentResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ProcessInfoDTO;
+import br.edu.ufape.enzitech.dto.response.RepetitionResponseDTO;
 import br.edu.ufape.enzitech.dto.response.TotalResultDataDTO;
 import br.edu.ufape.enzitech.dto.response.TotalResultEnzymeDTO;
 import br.edu.ufape.enzitech.dto.response.TotalResultExperimentDTO;
 import br.edu.ufape.enzitech.dto.response.TotalResultProcessDTO;
-import br.edu.ufape.enzitech.model.Enzyme;
 import br.edu.ufape.enzitech.model.Experiment;
 import br.edu.ufape.enzitech.model.ExperimentEnzyme;
+import br.edu.ufape.enzitech.model.ExperimentTreatment;
+import br.edu.ufape.enzitech.model.RepetitionStatus;
 import br.edu.ufape.enzitech.model.ResultExperiment;
-import br.edu.ufape.enzitech.model.Treatment;
 import br.edu.ufape.enzitech.repository.ExperimentEnzymeRepository;
 import br.edu.ufape.enzitech.repository.ExperimentRepository;
 import br.edu.ufape.enzitech.repository.ResultExperimentRepository;
-import br.edu.ufape.enzitech.repository.TreatmentRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 
 @Service
@@ -37,162 +36,90 @@ public class CalculateExperimentService {
 
     private final ExperimentEnzymeRepository experimentEnzymeRepository;
     private final ResultExperimentRepository resultRepository;
-    private final TreatmentService treatmentService;
     private final ExperimentRepository experimentRepository;
-    private final TreatmentRepository treatmentRepository;
 
+    @Transactional(readOnly = true)
+    public List<RepetitionResponseDTO> getRepetitions(UUID experimentId) {
+        return resultRepository.findByExperimentId(experimentId).stream()
+                .sorted(Comparator.<ResultExperiment, String>comparing(r -> r.getTreatment().getName())
+                        .thenComparing(r -> r.getEnzyme().getName())
+                        .thenComparing(ResultExperiment::getRepetitionNumber))
+                .map(RepetitionResponseDTO::fromEntity)
+                .toList();
+    }
 
-public CalculateExperimentResponseDTO calculatePreview(UUID experimentId, CalculateExperimentRequestDTO dto) {
-        ExperimentEnzyme config = experimentEnzymeRepository.findByExperimentIdAndEnzymeId(experimentId, dto.enzymeId())
-                .orElseThrow();
-        
-        List<RepetitionResult> details = performCalculations(config, dto.experimentData());
+    @Transactional(readOnly = true)
+    public RepetitionResponseDTO previewRepetition(UUID experimentId, SaveRepetitionRequestDTO dto) {
+        ExperimentEnzyme config = findConfig(experimentId, dto.enzymeId());
+        ResultExperiment slot = findSlot(experimentId, dto.treatmentId(), dto.enzymeId(), dto.repetitionNumber());
 
-        List<Double> results = details.stream().map(RepetitionResult::finalResult).toList();
-        double average = results.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-        
-        return new CalculateExperimentResponseDTO(results, average);
+        RepetitionResult detail = calculate(config, dto.sample(), dto.whiteSample());
+
+        return new RepetitionResponseDTO(
+                slot.getId(),
+                slot.getTreatment().getId(), slot.getTreatment().getName(),
+                config.getId(), config.getName(),
+                dto.repetitionNumber(), slot.getStatus().name(),
+                dto.sample(), dto.whiteSample(),
+                detail.difference(), detail.curve(), detail.finalResult()
+        );
     }
 
     @Transactional
-    public void saveResults(UUID experimentId, CalculateExperimentRequestDTO dto) {
-        Experiment experiment = experimentRepository.findById(experimentId).orElseThrow();
-        Treatment treatment = treatmentRepository.findById(dto.treatmentId()).orElseThrow();
-        ExperimentEnzyme config = experimentEnzymeRepository.findByExperimentIdAndEnzymeId(experimentId, dto.enzymeId())
-                .orElseThrow();
+    public ExperimentResponseDTO saveRepetition(UUID experimentId, SaveRepetitionRequestDTO dto) {
+        ExperimentEnzyme config = findConfig(experimentId, dto.enzymeId());
+        ResultExperiment slot = findSlot(experimentId, dto.treatmentId(), dto.enzymeId(), dto.repetitionNumber());
 
-        List<RepetitionResult> details = performCalculations(config, dto.experimentData());
+        RepetitionResult detail = calculate(config, dto.sample(), dto.whiteSample());
 
-        /* Remove os resultados anteriores desta combinação específica antes de salvar os novos
-        List<ResultExperiment> oldResults = resultRepository.findByExperimentIdAndTreatmentIdAndEnzymeId(experimentId, dto.treatmentId(), dto.enzymeId());
-        if (!oldResults.isEmpty()) {
-            resultRepository.deleteAll(oldResults);
-        }
-        */
-        
-        for (int i = 0; i < details.size(); i++) {
-            RepetitionResult detail = details.get(i);
-            
-            ResultExperiment resultExperiment = new ResultExperiment();
-            resultExperiment.setExperiment(experiment);
-            resultExperiment.setTreatment(treatment);
-            resultExperiment.setEnzyme(config.getEnzyme());
-            resultExperiment.setSample(dto.experimentData().get(i).sample());
-            resultExperiment.setWhiteSample(dto.experimentData().get(i).whiteSample());
-            resultExperiment.setDifferenceBetweenSamples(detail.difference());
-            resultExperiment.setCurve(detail.curve());
-            resultExperiment.setResult(detail.finalResult());
-        
-            resultExperiment.setCreatedAt(LocalDateTime.now());
-            resultExperiment.setUpdatedAt(LocalDateTime.now());
-            
-            resultRepository.save(resultExperiment);
-        }
+        slot.setSample(dto.sample());
+        slot.setWhiteSample(dto.whiteSample());
+        slot.setDifferenceBetweenSamples(detail.difference());
+        slot.setCurve(detail.curve());
+        slot.setResult(detail.finalResult());
+        slot.setStatus(RepetitionStatus.COMPLETED);
+        resultRepository.save(slot);
 
-        resultRepository.flush(); 
+        Experiment experiment = experimentRepository.findById(experimentId).orElseThrow(
+                () -> new EntityNotFoundException("Experimento não encontrado."));
 
-        int totalTreatments = experiment.getProcesses().size();
-        int totalEnzymes = experiment.getExperimentEnzymes().size();
-        int totalCombinations = totalTreatments * totalEnzymes;
+        long totalSlots = resultRepository.countByExperimentId(experimentId);
+        long completedSlots = resultRepository.countByExperimentIdAndStatus(experimentId, RepetitionStatus.COMPLETED);
+        experiment.setProgress(totalSlots > 0 ? (double) completedSlots / totalSlots : 0.0);
+        experimentRepository.save(experiment);
 
-        if (totalCombinations > 0) {
-            List<ResultExperiment> allResults = resultRepository.findByExperimentId(experimentId);
-
-            long completedCombinations = allResults.stream()
-                    .map(r -> r.getTreatment().getId().toString() + "-" + r.getEnzyme().getId().toString())
-                    .distinct()
-                    .count();
-
-            double newProgress = (double) completedCombinations / totalCombinations;
-
-            System.out.println("=== ATUALIZAÇÃO DE PROGRESSO ===");
-            System.out.println("Tratamentos: " + totalTreatments + " | Enzimas: " + totalEnzymes);
-            System.out.println("Combinações concluídas: " + completedCombinations + " de " + totalCombinations);
-            System.out.println("Progresso salvo no banco: " + newProgress);
-
-            experiment.setProgress(newProgress);
-            experimentRepository.save(experiment);
-        }
+        return ExperimentResponseDTO.fromEntity(experiment);
     }
 
-    @Transactional
-    public List<ResultExperiment> calculateAndSaveResults(UUID experimentId, CalculateExperimentRequestDTO dto) {
-        ExperimentEnzyme config = experimentEnzymeRepository.findByExperimentIdAndEnzymeId(experimentId, dto.enzymeId())
-                .orElseThrow(() -> new RuntimeException("Configuração da Enzima não encontrada para este Experimento."));
-
-        Treatment treatment = treatmentService.findById(dto.treatmentId());
-        Enzyme enzyme = config.getEnzyme();
-
-        List<ResultExperiment> savedResults = new ArrayList<>();
-
-        for (ExperimentDataRequestDTO data : dto.experimentData()) {
-
-            double difference = data.sample() - data.whiteSample();
-            double curve = calculateCurve(config, difference);
-            double finalResult = calculateFinalResult(enzyme, config, curve);
-
-            ResultExperiment result = new ResultExperiment();
-            result.setExperiment(config.getExperiment());
-            result.setEnzyme(enzyme);
-            result.setTreatment(treatment);
-            result.setSample(data.sample());
-            result.setWhiteSample(data.whiteSample());
-            result.setDifferenceBetweenSamples(difference);
-            result.setCurve(curve);
-            result.setResult(finalResult);
-            result.setCreatedAt(LocalDateTime.now());
-            result.setUpdatedAt(LocalDateTime.now());
-
-            savedResults.add(result);
-        }
-
-        return resultRepository.saveAll(savedResults);
+    private ExperimentEnzyme findConfig(UUID experimentId, UUID enzymeId) {
+        return experimentEnzymeRepository.findByIdAndExperimentId(enzymeId, experimentId)
+                .orElseThrow(() -> new EntityNotFoundException("Configuração da enzima não encontrada para este experimento."));
     }
 
-    private List<RepetitionResult> performCalculations(ExperimentEnzyme config, List<ExperimentDataRequestDTO> dataList) {
-        List<RepetitionResult> results = new ArrayList<>();
-        Enzyme enzyme = config.getEnzyme(); 
+    private ResultExperiment findSlot(UUID experimentId, UUID treatmentId, UUID enzymeId, int repetitionNumber) {
+        ResultExperiment slot = resultRepository.findByTreatmentIdAndEnzymeIdAndRepetitionNumber(treatmentId, enzymeId, repetitionNumber)
+                .orElseThrow(() -> new EntityNotFoundException("Repetição não encontrada para esta combinação de tratamento e enzima."));
 
-        for (ExperimentDataRequestDTO data : dataList) {
-
-            double difference = data.sample() - data.whiteSample();
-
-            Expression curveExp = new ExpressionBuilder(enzyme.getFormulaCurve())
-                    .variables("difference", "variableA", "variableB")
-                    .build()
-                    .setVariable("difference", difference)
-                    .setVariable("variableA", config.getVariableA())
-                    .setVariable("variableB", config.getVariableB());
-            double curve = curveExp.evaluate();
-
-            Expression resultExp = new ExpressionBuilder(enzyme.getFormulaCalculation())
-                    .variables("curve", "size", "duration", "weightSample", "weightGround")
-                    .build()
-                    .setVariable("curve", curve)
-                    .setVariable("size", config.getSize())
-                    .setVariable("duration", config.getDuration())
-                    .setVariable("weightSample", config.getWeightSample())
-                    .setVariable("weightGround", config.getWeightGround());
-            double finalResult = resultExp.evaluate();
-
-            if (Double.isNaN(finalResult) || Double.isInfinite(finalResult)) {
-                finalResult = 0.0;
-            } else if (finalResult < 0) {
-                finalResult = 0.0;
-            }
-
-            results.add(new RepetitionResult(difference, curve, finalResult));
+        if (!slot.getExperiment().getId().equals(experimentId)) {
+            throw new EntityNotFoundException("Repetição não pertence a este experimento.");
         }
 
-        return results;
+        return slot;
+    }
+
+    private RepetitionResult calculate(ExperimentEnzyme config, double sample, double whiteSample) {
+        double difference = sample - whiteSample;
+        double curve = calculateCurve(config, difference);
+        double finalResult = calculateFinalResult(config, curve);
+        return new RepetitionResult(difference, curve, finalResult);
     }
 
     private double calculateCurve(ExperimentEnzyme config, double difference) {
         boolean hasCustomCurve = config.getCustomFormulaCurve() != null && !config.getCustomFormulaCurve().isBlank();
-        
-        String formulaToUse = hasCustomCurve 
-                ? config.getCustomFormulaCurve() 
-                : config.getEnzyme().getFormulaCurve();
+
+        String formulaToUse = hasCustomCurve
+                ? config.getCustomFormulaCurve()
+                : config.getFormulaCurve();
 
         double varA = config.getVariableA() != null ? config.getVariableA() : 0.0;
         double varB = config.getVariableB() != null ? config.getVariableB() : 0.0;
@@ -206,13 +133,13 @@ public CalculateExperimentResponseDTO calculatePreview(UUID experimentId, Calcul
                 .evaluate();
     }
 
-    private double calculateFinalResult(Enzyme enzyme, ExperimentEnzyme config, double curve) {
+    private double calculateFinalResult(ExperimentEnzyme config, double curve) {
         double duration = config.getDuration() != null && config.getDuration() > 0 ? config.getDuration() : 1.0;
         double weightSample = config.getWeightSample() != null && config.getWeightSample() > 0 ? config.getWeightSample() : 1.0;
         double size = config.getSize() != null ? config.getSize() : 0.0;
         double weightGround = config.getWeightGround() != null ? config.getWeightGround() : 0.0;
 
-        return new ExpressionBuilder(enzyme.getFormulaCalculation())
+        double finalResult = new ExpressionBuilder(config.getFormulaCalculation())
                 .variables("curve", "size", "duration", "weightSample", "weightGround")
                 .build()
                 .setVariable("curve", curve)
@@ -221,59 +148,62 @@ public CalculateExperimentResponseDTO calculatePreview(UUID experimentId, Calcul
                 .setVariable("weightSample", weightSample)
                 .setVariable("weightGround", weightGround)
                 .evaluate();
+
+        if (Double.isNaN(finalResult) || Double.isInfinite(finalResult) || finalResult < 0) {
+            return 0.0;
+        }
+
+        return finalResult;
     }
 
     @Transactional(readOnly = true)
     public List<TotalResultExperimentDTO> getTotalResult(UUID experimentId) {
-        List<ResultExperiment> allResults = resultRepository.findByExperimentId(experimentId);
-        
-        if (allResults.isEmpty()) {
+        List<ResultExperiment> completedResults = resultRepository.findByExperimentId(experimentId).stream()
+                .filter(r -> r.getStatus() == RepetitionStatus.COMPLETED)
+                .toList();
+
+        if (completedResults.isEmpty()) {
             return List.of();
         }
-        
-        Experiment experiment = experimentRepository.findById(experimentId).orElseThrow();
+
         List<TotalResultExperimentDTO> responseList = new ArrayList<>();
 
-        Map<Enzyme, List<ResultExperiment>> resultsByEnzyme = allResults.stream()
+        Map<ExperimentEnzyme, List<ResultExperiment>> resultsByEnzyme = completedResults.stream()
                 .collect(Collectors.groupingBy(ResultExperiment::getEnzyme));
 
-        for (Map.Entry<Enzyme, List<ResultExperiment>> enzymeEntry : resultsByEnzyme.entrySet()) {
-            Enzyme enzyme = enzymeEntry.getKey();
+        for (Map.Entry<ExperimentEnzyme, List<ResultExperiment>> enzymeEntry : resultsByEnzyme.entrySet()) {
+            ExperimentEnzyme config = enzymeEntry.getKey();
             List<ResultExperiment> enzymeResults = enzymeEntry.getValue();
 
-            ExperimentEnzyme config = experiment.getExperimentEnzymes().stream()
-                    .filter(ee -> ee.getEnzyme().getId().equals(enzyme.getId()))
-                    .findFirst()
-                    .orElseThrow();
-
             TotalResultEnzymeDTO enzymeDTO = new TotalResultEnzymeDTO(
-                    enzyme.getId(), enzyme.getName(), enzyme.getType(),
-                    enzyme.getDescription(),
+                    config.getId(), config.getName(), config.getType(),
+                    config.getDescription(),
                     config.getVariableA(), config.getVariableB(),
                     config.getDuration(), config.getWeightSample(),
                     config.getWeightGround(), config.getSize()
             );
 
-            Map<Treatment, List<ResultExperiment>> resultsByTreatment = enzymeResults.stream()
+            Map<ExperimentTreatment, List<ResultExperiment>> resultsByTreatment = enzymeResults.stream()
                     .collect(Collectors.groupingBy(ResultExperiment::getTreatment));
 
             List<TotalResultProcessDTO> processesDTOList = new ArrayList<>();
 
-            for (Map.Entry<Treatment, List<ResultExperiment>> treatmentEntry : resultsByTreatment.entrySet()) {
-                Treatment treatment = treatmentEntry.getKey();
-                List<ResultExperiment> treatmentResults = treatmentEntry.getValue();
+            for (Map.Entry<ExperimentTreatment, List<ResultExperiment>> treatmentEntry : resultsByTreatment.entrySet()) {
+                ExperimentTreatment treatment = treatmentEntry.getKey();
+                List<ResultExperiment> treatmentResults = treatmentEntry.getValue().stream()
+                        .sorted(Comparator.comparing(ResultExperiment::getRepetitionNumber))
+                        .toList();
 
                 ProcessInfoDTO processInfo = new ProcessInfoDTO(
                         treatment.getId(), treatment.getName(), treatment.getDescription()
                 );
-                
+
                 List<TotalResultDataDTO> dataDTOList = new ArrayList<>();
-                int repetitionCounter = 1;
-                
+
                 for (ResultExperiment r : treatmentResults) {
                     dataDTOList.add(new TotalResultDataDTO(
                             r.getId(),
-                            repetitionCounter++,
+                            r.getRepetitionNumber(),
                             r.getSample(),
                             r.getWhiteSample(),
                             r.getDifferenceBetweenSamples(),

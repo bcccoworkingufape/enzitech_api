@@ -13,15 +13,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
-import br.edu.ufape.enzitech.dto.request.CalculateExperimentRequestDTO;
 import br.edu.ufape.enzitech.dto.request.ExperimentRequestDTO;
-import br.edu.ufape.enzitech.dto.response.CalculateExperimentResponseDTO;
+import br.edu.ufape.enzitech.dto.request.SaveRepetitionRequestDTO;
 import br.edu.ufape.enzitech.dto.response.EnzymeResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentPaginationResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResultWrapperDTO;
-import br.edu.ufape.enzitech.dto.response.TotalResultExperimentDTO;
+import br.edu.ufape.enzitech.dto.response.RepetitionResponseDTO;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,7 +35,9 @@ public interface ExperimentApi {
     @Operation(summary = "Listar Experimentos", description = "Devolve os experimentos pertencentes ao utilizador autenticado.")
     @GetMapping
     ResponseEntity<ExperimentPaginationResponseDTO> getMyExperiments(
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Parameter(description = "Filtra por experimentos concluídos (progress = 100%) ou em andamento.")
+            @RequestParam(required = false) Boolean finished
     );
 
     @Operation(summary = "Buscar Experimento", description = "Busca um experimento pelo ID.")
@@ -49,7 +51,7 @@ public interface ExperimentApi {
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     );
 
-    @Operation(summary = "Atualizar Experimento", description = "Atualiza nome e descrição de um experimento.")
+    @Operation(summary = "Atualizar Experimento", description = "Atualiza nome, descrição, repetições e a seleção de tratamentos/enzimas de um experimento. Tratamentos/enzimas removidos que já possuem repetições concluídas são preservados como histórico inativo, nunca apagados.")
     @PutMapping("/{id}")
     ResponseEntity<ExperimentResponseDTO> updateExperiment(
             @PathVariable UUID id, 
@@ -67,18 +69,22 @@ public interface ExperimentApi {
             @RequestBody(required = false) Object body
     );
 
-    @Operation(summary = "Calcular Resultados (Prévia)")
-    @PostMapping("/calculate/{id}") 
-    ResponseEntity<CalculateExperimentResponseDTO> calculateExperiment(
+    @Operation(summary = "Listar Repetições", description = "Lista todos os slots de repetição (pendentes e concluídos) do experimento.")
+    @GetMapping("/{id}/repetitions")
+    ResponseEntity<List<RepetitionResponseDTO>> getRepetitions(@PathVariable UUID id);
+
+    @Operation(summary = "Pré-visualizar Repetição", description = "Calcula o resultado de uma repetição sem persistir.")
+    @PostMapping("/{id}/repetitions/preview")
+    ResponseEntity<RepetitionResponseDTO> previewRepetition(
             @PathVariable UUID id,
-            @RequestBody @Valid CalculateExperimentRequestDTO dto
+            @RequestBody @Valid SaveRepetitionRequestDTO dto
     );
 
-    @Operation(summary = "Salvar Resultados Calculados")
-    @PostMapping("/save-result/{id}") 
-    ResponseEntity<ExperimentResponseDTO> saveResultExperiment(
+    @Operation(summary = "Salvar Repetição", description = "Calcula e salva uma única repetição, de forma parcial/isolada — não exige que as demais repetições estejam preenchidas.")
+    @PutMapping("/{id}/repetitions")
+    ResponseEntity<ExperimentResponseDTO> saveRepetition(
             @PathVariable UUID id,
-            @RequestBody @Valid CalculateExperimentRequestDTO dto
+            @RequestBody @Valid SaveRepetitionRequestDTO dto
     );
 
     @Operation(summary = "Obter Resultado Total do Experimento")

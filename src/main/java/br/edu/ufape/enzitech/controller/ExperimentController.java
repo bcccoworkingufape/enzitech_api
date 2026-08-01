@@ -9,13 +9,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.edu.ufape.enzitech.controller.api.ExperimentApi;
-import br.edu.ufape.enzitech.dto.request.CalculateExperimentRequestDTO;
 import br.edu.ufape.enzitech.dto.request.ExperimentRequestDTO;
-import br.edu.ufape.enzitech.dto.response.CalculateExperimentResponseDTO;
+import br.edu.ufape.enzitech.dto.request.SaveRepetitionRequestDTO;
 import br.edu.ufape.enzitech.dto.response.EnzymeResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentPaginationResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResultWrapperDTO;
+import br.edu.ufape.enzitech.dto.response.RepetitionResponseDTO;
 import br.edu.ufape.enzitech.dto.response.TotalResultExperimentDTO;
 import br.edu.ufape.enzitech.model.Experiment;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
@@ -33,28 +33,17 @@ public class ExperimentController implements ExperimentApi {
 
 
     @Override
-    public ResponseEntity<ExperimentPaginationResponseDTO> getMyExperiments(CustomUserDetails userDetails) {
+    public ResponseEntity<ExperimentPaginationResponseDTO> getMyExperiments(CustomUserDetails userDetails, Boolean finished) {
         UUID loggedUserId = userDetails.getUser().getId();
 
-        List<ExperimentResponseDTO> list = experimentService.findAllByUserId(loggedUserId)
+        List<ExperimentResponseDTO> list = experimentService.findAllByUserId(loggedUserId, finished)
                 .stream()
                 .map(ExperimentResponseDTO::fromEntity)
                 .toList();
-        
+
         ExperimentPaginationResponseDTO pagination = new ExperimentPaginationResponseDTO(list.size(), list);
-        
+
         return ResponseEntity.ok(pagination);
-    }
-
-    @Override
-    public ResponseEntity<ExperimentResponseDTO> saveResultExperiment(UUID id, CalculateExperimentRequestDTO dto) {
-        calculateExperimentService.saveResults(id, dto);
-
-        Experiment updatedExperiment = experimentService.findById(id);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ExperimentResponseDTO.fromEntity(updatedExperiment));
     }
 
     @Override
@@ -81,15 +70,18 @@ public class ExperimentController implements ExperimentApi {
     }
 
     @Override
-    public ResponseEntity<CalculateExperimentResponseDTO> calculateExperiment(UUID id, CalculateExperimentRequestDTO dto) {
-        
-        CalculateExperimentResponseDTO preview = calculateExperimentService.calculatePreview(id, dto);
+    public ResponseEntity<List<RepetitionResponseDTO>> getRepetitions(UUID id) {
+        return ResponseEntity.ok(calculateExperimentService.getRepetitions(id));
+    }
 
-        System.out.println("=== PREVIA ENVIADA PARA O FLUTTER ===");
-        System.out.println("Resultados (Repetições): " + preview.results());
-        System.out.println("Média Geral: " + preview.average());
+    @Override
+    public ResponseEntity<RepetitionResponseDTO> previewRepetition(UUID id, SaveRepetitionRequestDTO dto) {
+        return ResponseEntity.ok(calculateExperimentService.previewRepetition(id, dto));
+    }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(preview);
+    @Override
+    public ResponseEntity<ExperimentResponseDTO> saveRepetition(UUID id, SaveRepetitionRequestDTO dto) {
+        return ResponseEntity.ok(calculateExperimentService.saveRepetition(id, dto));
     }
 
     @Override
@@ -97,7 +89,7 @@ public class ExperimentController implements ExperimentApi {
         
         List<EnzymeResponseDTO> enzymes = experimentService.getEnzymesByExperiment(id)
                 .stream()
-                .map(EnzymeResponseDTO::fromEntity)
+                .map(EnzymeResponseDTO::fromExperimentEnzyme)
                 .toList();
 
         Map<String, List<EnzymeResponseDTO>> response = Map.of("enzymes", enzymes);

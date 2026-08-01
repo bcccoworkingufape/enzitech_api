@@ -18,33 +18,37 @@ import org.hibernate.annotations.SQLRestriction;
 public class ResultExperiment extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "treatment_id", nullable = false) 
-    private Treatment treatment;
+    @JoinColumn(name = "treatment_id", nullable = false)
+    private ExperimentTreatment treatment;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "enzyme_id", nullable = false)
-    private Enzyme enzyme;
+    private ExperimentEnzyme enzyme;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "experiment_id", nullable = false)
     private Experiment experiment;
 
+    @Column(name = "repetition_number", nullable = false)
+    private Integer repetitionNumber;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    private RepetitionStatus status = RepetitionStatus.PENDING;
+
     private Double result;
 
-    @Column(nullable = false)
     private Double sample;
 
-    @Column(name = "white_sample", nullable = false)
+    @Column(name = "white_sample")
     private Double whiteSample;
 
-    @Column(name = "difference_between_samples", nullable = false)
+    @Column(name = "difference_between_samples")
     private Double differenceBetweenSamples;
 
-    @Column(nullable = false)
     private Double curve;
 
-    
+
     @PrePersist
     protected void onCreate() {
         this.setCreatedAt(LocalDateTime.now());
