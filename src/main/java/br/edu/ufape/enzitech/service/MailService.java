@@ -39,7 +39,7 @@ public class MailService {
 
             mailSender.send(message);
         } catch (MessagingException e) {
-            throw new RuntimeException("Falha ao enviar e-mail de recuperação.");
+            throw new RuntimeException("Falha ao enviar e-mail de recuperação: " + e.getMessage(), e);
         }
     }
 }
