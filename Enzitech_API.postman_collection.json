@@ -1,0 +1,652 @@
+{
+	"info": {
+		"_postman_id": "7b6e5f2a-5e0e-4c1a-9a3a-2f0e6c1e9d10",
+		"name": "Enzitech API",
+		"description": "Collection completa da API do Enzitech (LEMA/UFAPE) — plataforma para registo de experimentos com enzimas do solo e cálculo da atividade enzimática.\n\n## Como usar\n1. Configure a variável `base_url` (padrão: `http://localhost:8080`).\n2. Execute **Auth > Login** com um usuário já existente — o token JWT é salvo automaticamente na variável `token`, usada por todas as demais requisições (autenticação Bearer no nível da collection).\n3. Para popular os dados de teste, siga a ordem sugerida pelas pastas: Users → Enzymes → Treatments → Experiments. As requisições de criação salvam automaticamente o ID do recurso criado (`user_id`, `enzyme_id`, `treatment_id`, `experiment_id`) nas variáveis da collection, para uso nas requisições seguintes.\n4. Para as rotas de repetição (`Pré-visualizar` / `Salvar Repetição`), execute primeiro **Listar Repetições**, que salva `experiment_treatment_id` e `experiment_enzyme_id` (os IDs das configurações do tratamento/enzima dentro do experimento — diferentes dos IDs globais de `Treatment`/`Enzyme`).\n\n## Autenticação\nA maioria das rotas exige um JWT válido (`Authorization: Bearer <token>`). As exceções (públicas) são: `POST /auth/**`, `POST /users` e os endpoints do Swagger — marcadas nesta collection com auth `No Auth`.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [],
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:8080", "type": "string" },
+		{ "key": "token", "value": "", "type": "string" },
+		{ "key": "user_id", "value": "", "type": "string" },
+		{ "key": "enzyme_id", "value": "", "type": "string" },
+		{ "key": "treatment_id", "value": "", "type": "string" },
+		{ "key": "experiment_id", "value": "", "type": "string" },
+		{ "key": "experiment_treatment_id", "value": "", "type": "string" },
+		{ "key": "experiment_enzyme_id", "value": "", "type": "string" }
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@enzitech.com\",\n    \"password\": \"SenhaForte123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [ "{{base_url}}" ],
+							"path": [ "auth", "login" ]
+						},
+						"description": "Valida as credenciais e devolve um token JWT + os dados do usuário."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const json = pm.response.json();",
+									"    pm.collectionVariables.set(\"token\", json.token);",
+									"    if (json.user && json.user.id) {",
+									"        pm.collectionVariables.set(\"user_id\", json.user.id);",
+									"    }",
+									"}",
+									"pm.test(\"Status 200 e token presente\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().token).to.be.a(\"string\");",
+									"});"
+								]
+							}
+						}
+					],
+					"response": []
+				},
+				{
+					"name": "Esqueci a Senha",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"usuario@enzitech.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/forgot-password",
+							"host": [ "{{base_url}}" ],
+							"path": [ "auth", "forgot-password" ]
+						},
+						"description": "Gera um código de recuperação e envia por e-mail."
+					},
+					"response": []
+				},
+				{
+					"name": "Verificar PIN",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"usuario@enzitech.com\",\n    \"token\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/verify-pin",
+							"host": [ "{{base_url}}" ],
+							"path": [ "auth", "verify-pin" ]
+						},
+						"description": "Verifica se o código de recuperação enviado por e-mail é válido."
+					},
+					"response": []
+				},
+				{
+					"name": "Redefinir Senha",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"usuario@enzitech.com\",\n    \"token\": \"123456\",\n    \"newPassword\": \"NovaSenhaForte123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/reset-password",
+							"host": [ "{{base_url}}" ],
+							"path": [ "auth", "reset-password" ]
+						},
+						"description": "Valida o token de recuperação e atualiza a senha do usuário."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Criar Usuário",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Usuário Teste\",\n    \"email\": \"usuario@enzitech.com\",\n    \"password\": \"SenhaForte123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users",
+							"host": [ "{{base_url}}" ],
+							"path": [ "users" ]
+						},
+						"description": "Regista um novo usuário. Rota pública."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"user_id\", pm.response.json().id);",
+									"}"
+								]
+							}
+						}
+					],
+					"response": []
+				},
+				{
+					"name": "Listar Usuários",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users?page=0&size=10",
+							"host": [ "{{base_url}}" ],
+							"path": [ "users" ],
+							"query": [
+								{ "key": "page", "value": "0" },
+								{ "key": "size", "value": "10" }
+							]
+						},
+						"description": "Devolve todos os usuários paginados. Requer autenticação."
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Usuário por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/{{user_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "users", "{{user_id}}" ]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Usuário",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Usuário Teste Atualizado\",\n    \"email\": \"usuario@enzitech.com\",\n    \"password\": \"NovaSenhaForte123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/{{user_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "users", "{{user_id}}" ]
+						},
+						"description": "A senha é opcional na atualização — se enviada em branco/nula, a senha atual é mantida."
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Usuário",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/{{user_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "users", "{{user_id}}" ]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Promover Usuário a ADMIN",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"usuario@enzitech.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/promote-admin",
+							"host": [ "{{base_url}}" ],
+							"path": [ "users", "promote-admin" ]
+						},
+						"description": "Concede o papel de ADMIN ao usuário do e-mail informado.\n\nRequer que o usuário autenticado (dono do token em uso) já seja ADMIN — caso contrário devolve 403 Forbidden."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Enzymes",
+			"item": [
+				{
+					"name": "Criar Enzima",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Urease\",\n    \"variableA\": 0.5,\n    \"variableB\": 1.2,\n    \"type\": \"Hidrolase\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/enzymes",
+							"host": [ "{{base_url}}" ],
+							"path": [ "enzymes" ]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"enzyme_id\", pm.response.json().id);",
+									"}"
+								]
+							}
+						}
+					],
+					"response": []
+				},
+				{
+					"name": "Listar Enzimas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/enzymes?page=0&size=10",
+							"host": [ "{{base_url}}" ],
+							"path": [ "enzymes" ],
+							"query": [
+								{ "key": "page", "value": "0" },
+								{ "key": "size", "value": "10" }
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Enzima por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/enzymes/{{enzyme_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "enzymes", "{{enzyme_id}}" ]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Enzima",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Urease\",\n    \"variableA\": 0.6,\n    \"variableB\": 1.3,\n    \"type\": \"Hidrolase\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/enzymes/{{enzyme_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "enzymes", "{{enzyme_id}}" ]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Enzima",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/enzymes/{{enzyme_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "enzymes", "{{enzyme_id}}" ]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Treatments",
+			"item": [
+				{
+					"name": "Criar Tratamento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Adubação Orgânica\",\n    \"description\": \"Tratamento com aplicação de composto orgânico\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/treatments",
+							"host": [ "{{base_url}}" ],
+							"path": [ "treatments" ]
+						},
+						"description": "O campo `description` é opcional. O tratamento fica vinculado ao usuário autenticado."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"treatment_id\", pm.response.json().id);",
+									"}"
+								]
+							}
+						}
+					],
+					"response": []
+				},
+				{
+					"name": "Listar Tratamentos do Usuário Logado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/treatments",
+							"host": [ "{{base_url}}" ],
+							"path": [ "treatments" ]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Tratamentos por Experimento",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/treatments/experiment/{{experiment_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "treatments", "experiment", "{{experiment_id}}" ]
+						},
+						"description": "Devolve os tratamentos (snapshots) vinculados a um experimento específico."
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Tratamento",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/treatments/{{treatment_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "treatments", "{{treatment_id}}" ]
+						},
+						"description": "Eliminação lógica (soft delete) do tratamento."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Experiments",
+			"item": [
+				{
+					"name": "Criar Experimento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Experimento Solo A\",\n    \"description\": \"Avaliação da atividade enzimática em solo tratado com diferentes adubações\",\n    \"repetitions\": 3,\n    \"processes\": [\n        \"{{treatment_id}}\"\n    ],\n    \"experimentsEnzymes\": [\n        {\n            \"enzyme\": \"{{enzyme_id}}\",\n            \"variableA\": 0.5,\n            \"variableB\": 1.2,\n            \"duration\": 60,\n            \"weightSample\": 5,\n            \"weightGround\": 2.5,\n            \"size\": 10\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/experiments",
+							"host": [ "{{base_url}}" ],
+							"path": [ "experiments" ]
+						},
+						"description": "`processes` recebe os IDs de tratamentos já criados em **Treatments > Criar Tratamento** (não os IDs das configurações dentro do experimento). `experimentsEnzymes[].enzyme` recebe o ID global da enzima criada em **Enzymes > Criar Enzima**."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"experiment_id\", pm.response.json().id);",
+									"}"
+								]
+							}
+						}
+					],
+					"response": []
+				},
+				{
+					"name": "Listar Meus Experimentos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/experiments?finished=false",
+							"host": [ "{{base_url}}" ],
+							"path": [ "experiments" ],
+							"query": [
+								{
+									"key": "finished",
+									"value": "false",
+									"description": "Opcional. true = apenas concluídos, false = apenas em andamento, omitido = todos."
+								}
+							]
+						},
+						"description": "Devolve os experimentos pertencentes ao usuário autenticado."
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Experimento por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/experiments/{{experiment_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "experiments", "{{experiment_id}}" ]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Experimento",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Experimento Solo A (revisado)\",\n    \"description\": \"Avaliação da atividade enzimática em solo tratado com diferentes adubações\",\n    \"repetitions\": 3,\n    \"processes\": [\n        \"{{treatment_id}}\"\n    ],\n    \"experimentsEnzymes\": [\n        {\n            \"enzyme\": \"{{enzyme_id}}\",\n            \"variableA\": 0.5,\n            \"variableB\": 1.2,\n            \"duration\": 60,\n            \"weightSample\": 5,\n            \"weightGround\": 2.5,\n            \"size\": 10\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/experiments/{{experiment_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "experiments", "{{experiment_id}}" ]
+						},
+						"description": "Reconcilia tratamentos/enzimas/repetições do experimento. Itens removidos que já possuem repetições concluídas são preservados como histórico inativo, nunca apagados."
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Experimento",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/experiments/{{experiment_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "experiments", "{{experiment_id}}" ]
+						},
+						"description": "Soft delete do experimento."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Enzimas do Experimento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base_url}}/experiments/get-enzymes/{{experiment_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "experiments", "get-enzymes", "{{experiment_id}}" ]
+						},
+						"description": "Rota histórica mantida em POST por compatibilidade com o legado. Corpo da requisição não é obrigatório."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Repetições",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/experiments/{{experiment_id}}/repetitions",
+							"host": [ "{{base_url}}" ],
+							"path": [ "experiments", "{{experiment_id}}", "repetitions" ]
+						},
+						"description": "Lista todos os slots de repetição (pendentes e concluídos). Use o `treatmentId`/`enzymeId` de um item da resposta nas rotas de preview/salvar repetição."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const list = pm.response.json();",
+									"    if (Array.isArray(list) && list.length > 0) {",
+									"        pm.collectionVariables.set(\"experiment_treatment_id\", list[0].treatmentId);",
+									"        pm.collectionVariables.set(\"experiment_enzyme_id\", list[0].enzymeId);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"response": []
+				},
+				{
+					"name": "Pré-visualizar Repetição",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"treatmentId\": \"{{experiment_treatment_id}}\",\n    \"enzymeId\": \"{{experiment_enzyme_id}}\",\n    \"repetitionNumber\": 1,\n    \"sample\": 1.25,\n    \"whiteSample\": 0.35\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/experiments/{{experiment_id}}/repetitions/preview",
+							"host": [ "{{base_url}}" ],
+							"path": [ "experiments", "{{experiment_id}}", "repetitions", "preview" ]
+						},
+						"description": "Calcula o resultado de uma repetição sem persistir. `treatmentId`/`enzymeId` são os IDs retornados por **Listar Repetições** (configurações dentro do experimento), não os IDs globais de Treatment/Enzyme."
+					},
+					"response": []
+				},
+				{
+					"name": "Salvar Repetição",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"treatmentId\": \"{{experiment_treatment_id}}\",\n    \"enzymeId\": \"{{experiment_enzyme_id}}\",\n    \"repetitionNumber\": 1,\n    \"sample\": 1.25,\n    \"whiteSample\": 0.35\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/experiments/{{experiment_id}}/repetitions",
+							"host": [ "{{base_url}}" ],
+							"path": [ "experiments", "{{experiment_id}}", "repetitions" ]
+						},
+						"description": "Calcula e salva uma única repetição de forma parcial/isolada — não exige que as demais repetições estejam preenchidas."
+					},
+					"response": []
+				},
+				{
+					"name": "Obter Resultado Total do Experimento",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/experiments/get-total-result/{{experiment_id}}",
+							"host": [ "{{base_url}}" ],
+							"path": [ "experiments", "get-total-result", "{{experiment_id}}" ]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
