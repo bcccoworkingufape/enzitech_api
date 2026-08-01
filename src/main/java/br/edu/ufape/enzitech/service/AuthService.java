@@ -57,7 +57,7 @@ public class AuthService {
     @Transactional
     public void forgotPassword(ForgotPasswordRequestDTO dto) {
         User user = userRepository.findByEmail(dto.email())
-                .orElseThrow(() -> new RuntimeException("Se o e-mail existir em nossa base de dados, receberá um código."));
+                .orElseThrow(() -> new RuntimeException("O e-mail não está cadastrado em nossa base de dados."));
 
         String pinCode = String.format("%06d", new java.util.Random().nextInt(1000000));
 
