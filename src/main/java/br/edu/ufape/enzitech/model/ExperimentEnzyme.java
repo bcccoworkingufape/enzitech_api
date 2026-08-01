@@ -7,11 +7,15 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.NotFound;
 import org.hibernate.annotations.NotFoundAction;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "experiments_enzymes")
+@SQLDelete(sql = "UPDATE experiments_enzymes SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at is null")
 public class ExperimentEnzyme extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
