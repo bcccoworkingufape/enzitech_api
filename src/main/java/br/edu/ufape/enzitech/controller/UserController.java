@@ -1,9 +1,11 @@
 package br.edu.ufape.enzitech.controller;
 
 import br.edu.ufape.enzitech.controller.api.UserApi;
+import br.edu.ufape.enzitech.dto.request.PromoteAdminRequestDTO;
 import br.edu.ufape.enzitech.dto.request.UserRequestDTO;
 import br.edu.ufape.enzitech.dto.response.UserResponseDTO;
 import br.edu.ufape.enzitech.model.User;
+import br.edu.ufape.enzitech.security.CustomUserDetails;
 import br.edu.ufape.enzitech.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -46,5 +48,11 @@ public class UserController implements UserApi {
     public ResponseEntity<Void> deleteUser(UUID id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<UserResponseDTO> promoteToAdmin(PromoteAdminRequestDTO dto, CustomUserDetails userDetails) {
+        User promoted = userService.promoteToAdmin(dto.email(), userDetails.getUser());
+        return ResponseEntity.ok(UserResponseDTO.fromEntity(promoted));
     }
 }

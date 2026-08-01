@@ -2,8 +2,10 @@ package br.edu.ufape.enzitech.service;
 
 import br.edu.ufape.enzitech.dto.request.UserRequestDTO;
 import br.edu.ufape.enzitech.exception.EmailAlreadyRegisteredException;
+import br.edu.ufape.enzitech.exception.RoleNotAllowedException;
 import br.edu.ufape.enzitech.exception.UserNotFoundException;
 import br.edu.ufape.enzitech.model.User;
+import br.edu.ufape.enzitech.model.enums.Role;
 import br.edu.ufape.enzitech.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -73,5 +75,19 @@ public class UserService {
     public void delete(UUID id) {
         User user = findById(id);
         userRepository.delete(user);
+    }
+
+    @Transactional
+    public User promoteToAdmin(String email, User requester) {
+        if (requester.getRole() != Role.ADMIN) {
+            throw new RoleNotAllowedException();
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(UserNotFoundException::new);
+
+        user.setRole(Role.ADMIN);
+
+        return userRepository.save(user);
     }
 }
