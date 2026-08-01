@@ -2,9 +2,6 @@ package br.edu.ufape.enzitech.model;
 
 import java.time.LocalDateTime;
 
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,14 +12,23 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 @Entity
 @Getter
 @Setter
-@Table(name = "treatments")
-@SQLDelete(sql = "UPDATE treatments SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at is null")
-public class Treatment extends BaseEntity {
+@Table(name = "experiment_treatments")
+public class ExperimentTreatment extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "experiment_id", nullable = false)
+    private Experiment experiment;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_treatment_id")
+    @NotFound(action = NotFoundAction.IGNORE)
+    private Treatment sourceTreatment;
 
     @Column(nullable = false)
     private String name;
@@ -30,9 +36,8 @@ public class Treatment extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(nullable = false, columnDefinition = "boolean not null default true")
+    private Boolean active = true;
 
     @PrePersist
     protected void onCreate() {

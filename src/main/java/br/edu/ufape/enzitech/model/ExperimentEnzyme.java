@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 @Entity
 @Getter
@@ -17,8 +19,24 @@ public class ExperimentEnzyme extends BaseEntity {
     private Experiment experiment;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "enzyme_id", nullable = false)
+    @JoinColumn(name = "enzyme_id")
+    @NotFound(action = NotFoundAction.IGNORE)
     private Enzyme enzyme;
+
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "type")
+    private String type;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "formula_curve", columnDefinition = "TEXT")
+    private String formulaCurve;
+
+    @Column(name = "formula_calculation", columnDefinition = "TEXT")
+    private String formulaCalculation;
 
     @Column(name = "variable_a")
     private Double variableA;
@@ -41,7 +59,10 @@ public class ExperimentEnzyme extends BaseEntity {
     @Column(nullable = false)
     private Double size;
 
-    
+    @Column(nullable = false, columnDefinition = "boolean not null default true")
+    private Boolean active = true;
+
+
     @PrePersist
     protected void onCreate() {
         this.setCreatedAt(LocalDateTime.now());

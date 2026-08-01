@@ -19,7 +19,7 @@ public record ExperimentEnzymeResponseDTO(
     public static ExperimentEnzymeResponseDTO fromEntity(ExperimentEnzyme config) {
         return new ExperimentEnzymeResponseDTO(
                 config.getId(),
-                config.getEnzyme() != null ? EnzymeResponseDTO.fromEntity(config.getEnzyme()) : null,
+                EnzymeResponseDTO.fromExperimentEnzyme(config),
                 config.getVariableA(),
                 config.getVariableB(),
                 config.getDuration(),

@@ -24,7 +24,7 @@ public class TreatmentController implements TreatmentApi {
     public ResponseEntity<List<TreatmentResponseDTO>> getTreatmentsByExperiment(UUID experimentId) {
         List<TreatmentResponseDTO> treatments = treatmentService.findByExperiment(experimentId)
                 .stream()
-                .map(TreatmentResponseDTO::fromEntity)
+                .map(TreatmentResponseDTO::fromExperimentTreatment)
                 .toList();
         return ResponseEntity.ok(treatments);
     }

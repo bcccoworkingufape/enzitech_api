@@ -7,10 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.ufape.enzitech.dto.request.TreatmentRequestDTO;
+import br.edu.ufape.enzitech.model.ExperimentTreatment;
 import br.edu.ufape.enzitech.model.Treatment;
 import br.edu.ufape.enzitech.model.User;
-import br.edu.ufape.enzitech.repository.ExperimentRepository;
-import br.edu.ufape.enzitech.repository.ResultExperimentRepository;
+import br.edu.ufape.enzitech.repository.ExperimentTreatmentRepository;
 import br.edu.ufape.enzitech.repository.TreatmentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class TreatmentService {
 
     private final TreatmentRepository treatmentRepository;
-    private final ResultExperimentRepository resultExperimentRepository;
-    private final ExperimentRepository experimentRepository;
+    private final ExperimentTreatmentRepository experimentTreatmentRepository;
 
 
     public Treatment findById(UUID id) {
@@ -29,10 +28,10 @@ public class TreatmentService {
                 .orElseThrow(() -> new EntityNotFoundException("Tratamento não encontrado com o id: " + id));
     }
 
-    public List<Treatment> findByExperiment(UUID experimentId) {
-        return treatmentRepository.findByExperiments_Id(experimentId);
+    public List<ExperimentTreatment> findByExperiment(UUID experimentId) {
+        return experimentTreatmentRepository.findByExperimentId(experimentId);
     }
-    
+
     public List<Treatment> findByUser(UUID userId) {
         return treatmentRepository.findByUserId(userId); 
     }
@@ -53,12 +52,6 @@ public class TreatmentService {
 
     @Transactional
     public void delete(UUID id) {
-        boolean hasResults = resultExperimentRepository.existsByTreatmentId(id);
-        
-        if (hasResults) {
-            throw new IllegalStateException("Não é possível eliminar este tratamento pois já existem resultados de cálculos associados a ele.");
-        }
-
         Treatment treatment = findById(id);
         treatmentRepository.delete(treatment);
     }

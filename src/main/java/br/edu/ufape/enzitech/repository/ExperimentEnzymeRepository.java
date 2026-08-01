@@ -13,6 +13,6 @@ import br.edu.ufape.enzitech.model.ExperimentEnzyme;
 public interface ExperimentEnzymeRepository extends JpaRepository<ExperimentEnzyme, UUID> {
     
     List<ExperimentEnzyme> findByExperimentId(UUID experimentId);
-    
-    Optional<ExperimentEnzyme> findByExperimentIdAndEnzymeId(UUID experimentId, UUID enzymeId);
+
+    Optional<ExperimentEnzyme> findByIdAndExperimentId(UUID id, UUID experimentId);
 }

@@ -1,6 +1,8 @@
 package br.edu.ufape.enzitech.dto.response;
 
 import br.edu.ufape.enzitech.model.Experiment;
+import br.edu.ufape.enzitech.model.ExperimentEnzyme;
+import br.edu.ufape.enzitech.model.ExperimentTreatment;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -27,15 +29,20 @@ public record ExperimentResponseDTO(
                 experiment.getRepetitions() != null ? experiment.getRepetitions() : 0,
                 experiment.getProgress() != null ? experiment.getProgress() : 0.0,
                 UserResponseDTO.fromEntity(experiment.getUser()),
-                experiment.getProcesses() != null ? 
-                        experiment.getProcesses().stream().map(TreatmentResponseDTO::fromEntity).toList() : 
-                        List.of(),
-                experiment.getExperimentEnzymes() != null ?
-                        experiment.getExperimentEnzymes().stream().map(ExperimentEnzymeResponseDTO::fromEntity).toList() :
+                experiment.getExperimentTreatments() != null ?
+                        experiment.getExperimentTreatments().stream()
+                                .filter(ExperimentTreatment::getActive)
+                                .map(TreatmentResponseDTO::fromExperimentTreatment).toList() :
                         List.of(),
                 experiment.getExperimentEnzymes() != null ?
                         experiment.getExperimentEnzymes().stream()
-                                .map(config -> EnzymeResponseDTO.fromEntity(config.getEnzyme()))
+                                .filter(ExperimentEnzyme::getActive)
+                                .map(ExperimentEnzymeResponseDTO::fromEntity).toList() :
+                        List.of(),
+                experiment.getExperimentEnzymes() != null ?
+                        experiment.getExperimentEnzymes().stream()
+                                .filter(ExperimentEnzyme::getActive)
+                                .map(EnzymeResponseDTO::fromExperimentEnzyme)
                                 .toList() :
                         List.of(),
                 experiment.getCreatedAt(),

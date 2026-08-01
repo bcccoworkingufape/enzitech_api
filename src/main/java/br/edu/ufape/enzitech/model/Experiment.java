@@ -41,13 +41,8 @@ public class Experiment extends BaseEntity {
         @Column(columnDefinition = "NUMERIC(5,2) DEFAULT 0.00")
         private Double progress;
 
-    @ManyToMany
-    @JoinTable(
-        name = "experiments_processes",
-        joinColumns = @JoinColumn(name = "experimentId", referencedColumnName = "id"),
-        inverseJoinColumns = @JoinColumn(name = "processId", referencedColumnName = "id")
-    )
-    private List<Treatment> processes;
+    @OneToMany(mappedBy = "experiment")
+    private List<ExperimentTreatment> experimentTreatments;
 
     @PrePersist
     protected void onCreate() {
