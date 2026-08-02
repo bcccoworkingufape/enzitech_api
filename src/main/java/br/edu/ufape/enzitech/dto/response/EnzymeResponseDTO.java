@@ -15,6 +15,8 @@ public record EnzymeResponseDTO(
         String formula,
         String formulaCurve,
         String formulaCalculation,
+        String customFormulaCurve,
+        String customFormulaCalculation,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -29,6 +31,8 @@ public record EnzymeResponseDTO(
                 enzyme.getDescription(),
                 enzyme.getFormulaCurve(),
                 enzyme.getFormulaCalculation(),
+                null,
+                null,
                 enzyme.getCreatedAt(),
                 enzyme.getUpdatedAt()
         );
@@ -45,6 +49,8 @@ public record EnzymeResponseDTO(
                 config.getDescription(),
                 config.getFormulaCurve(),
                 config.getFormulaCalculation(),
+                config.getCustomFormulaCurve(),
+                config.getCustomFormulaCalculation(),
                 config.getCreatedAt(),
                 config.getUpdatedAt()
         );

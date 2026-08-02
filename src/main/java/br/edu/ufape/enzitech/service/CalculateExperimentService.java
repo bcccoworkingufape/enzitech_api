@@ -139,7 +139,13 @@ public class CalculateExperimentService {
         double size = config.getSize() != null ? config.getSize() : 0.0;
         double weightGround = config.getWeightGround() != null ? config.getWeightGround() : 0.0;
 
-        double finalResult = new ExpressionBuilder(config.getFormulaCalculation())
+        boolean hasCustomCalculation = config.getCustomFormulaCalculation() != null && !config.getCustomFormulaCalculation().isBlank();
+
+        String formulaToUse = hasCustomCalculation
+                ? config.getCustomFormulaCalculation()
+                : config.getFormulaCalculation();
+
+        double finalResult = new ExpressionBuilder(formulaToUse)
                 .variables("curve", "size", "duration", "weightSample", "weightGround")
                 .build()
                 .setVariable("curve", curve)

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -17,7 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import br.edu.ufape.enzitech.dto.request.ExperimentRequestDTO;
 import br.edu.ufape.enzitech.dto.request.SaveRepetitionRequestDTO;
+import br.edu.ufape.enzitech.dto.request.UpdateEnzymeFormulaRequestDTO;
 import br.edu.ufape.enzitech.dto.response.EnzymeResponseDTO;
+import br.edu.ufape.enzitech.dto.response.ExperimentEnzymeResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentPaginationResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResultWrapperDTO;
@@ -90,4 +93,12 @@ public interface ExperimentApi {
     @Operation(summary = "Obter Resultado Total do Experimento")
     @GetMapping("/get-total-result/{id}")
     ResponseEntity<ExperimentResultWrapperDTO> getTotalResult(@PathVariable UUID id);
+
+    @Operation(summary = "Personalizar Fórmula da Enzima", description = "Define fórmulas customizadas (curva e/ou cálculo final) para a configuração de uma enzima dentro deste experimento. Envie null/vazio para voltar a usar a fórmula padrão da enzima.")
+    @PatchMapping("/{id}/enzymes/{experimentEnzymeId}/formula")
+    ResponseEntity<ExperimentEnzymeResponseDTO> updateEnzymeFormula(
+            @PathVariable UUID id,
+            @PathVariable UUID experimentEnzymeId,
+            @RequestBody @Valid UpdateEnzymeFormulaRequestDTO dto
+    );
 }

@@ -659,6 +659,26 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Personalizar Fórmula da Enzima",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customFormulaCurve\": \"(difference - variableB) / variableA\",\n    \"customFormulaCalculation\": \"(curve * size) / (duration * weightSample * weightGround)\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/experiments/{{experiment_id}}/enzymes/{{experiment_enzyme_id}}/formula",
+							"host": [ "{{base_url}}" ],
+							"path": [ "experiments", "{{experiment_id}}", "enzymes", "{{experiment_enzyme_id}}", "formula" ]
+						},
+						"description": "Define fórmulas customizadas (curva e/ou cálculo final) para a configuração de uma enzima dentro deste experimento — sem afetar o cadastro global da enzima nem outros experimentos.\n\n`experiment_enzyme_id` é o ID retornado em **Listar Repetições** (ou no campo `enzyme.id` de `ExperimentResponseDTO.experimentEnzymes`), não o ID global da enzima.\n\nEnvie `null` ou string vazia em qualquer um dos campos para voltar a usar a fórmula padrão da enzima naquele estágio.\n\nVariáveis aceitas em `customFormulaCurve`: `difference`, `variableA`, `variableB`.\nVariáveis aceitas em `customFormulaCalculation`: `curve`, `size`, `duration`, `weightSample`, `weightGround`."
+					},
+					"response": []
 				}
 			]
 		}

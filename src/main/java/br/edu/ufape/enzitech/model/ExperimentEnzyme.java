@@ -51,6 +51,9 @@ public class ExperimentEnzyme extends BaseEntity {
     @Column(name = "custom_formula_curve", columnDefinition = "TEXT")
     private String customFormulaCurve;
 
+    @Column(name = "custom_formula_calculation", columnDefinition = "TEXT")
+    private String customFormulaCalculation;
+
     @Column(nullable = false)
     private Double duration;
     

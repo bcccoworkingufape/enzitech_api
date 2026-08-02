@@ -9,11 +9,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import br.edu.ufape.enzitech.dto.request.ExperimentEnzymeRequestDTO;
 import br.edu.ufape.enzitech.dto.request.ExperimentRequestDTO;
+import br.edu.ufape.enzitech.dto.request.UpdateEnzymeFormulaRequestDTO;
 import br.edu.ufape.enzitech.model.Enzyme;
 import br.edu.ufape.enzitech.model.Experiment;
 import br.edu.ufape.enzitech.model.ExperimentEnzyme;
@@ -30,6 +33,7 @@ import br.edu.ufape.enzitech.repository.ResultExperimentRepository;
 import br.edu.ufape.enzitech.repository.TreatmentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import net.objecthunter.exp4j.ExpressionBuilder;
 
 @Service
 @RequiredArgsConstructor
@@ -294,5 +298,33 @@ public class ExperimentService {
     public void delete(UUID id) {
         Experiment experiment = findById(id);
         experimentRepository.delete(experiment);
+    }
+
+    @Transactional
+    public ExperimentEnzyme updateEnzymeFormula(UUID experimentId, UUID experimentEnzymeId, UpdateEnzymeFormulaRequestDTO dto) {
+        ExperimentEnzyme config = experimentEnzymeRepository.findByIdAndExperimentId(experimentEnzymeId, experimentId)
+                .orElseThrow(() -> new EntityNotFoundException("Configuração da enzima não encontrada para este experimento."));
+
+        validateFormula(dto.customFormulaCurve(), "difference", "variableA", "variableB");
+        validateFormula(dto.customFormulaCalculation(), "curve", "size", "duration", "weightSample", "weightGround");
+
+        config.setCustomFormulaCurve(dto.customFormulaCurve());
+        config.setCustomFormulaCalculation(dto.customFormulaCalculation());
+
+        return experimentEnzymeRepository.save(config);
+    }
+
+    private void validateFormula(String formula, String... variables) {
+        if (formula == null || formula.isBlank()) return;
+
+        try {
+            var expression = new ExpressionBuilder(formula).variables(variables).build();
+            for (String variable : variables) {
+                expression.setVariable(variable, 1.0);
+            }
+            expression.evaluate();
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Fórmula inválida: " + e.getMessage());
+        }
     }
 }

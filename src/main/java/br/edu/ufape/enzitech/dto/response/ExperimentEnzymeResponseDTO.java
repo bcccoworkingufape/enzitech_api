@@ -13,6 +13,8 @@ public record ExperimentEnzymeResponseDTO(
         Double weightSample,
         Double weightGround,
         Double size,
+        String customFormulaCurve,
+        String customFormulaCalculation,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -26,6 +28,8 @@ public record ExperimentEnzymeResponseDTO(
                 config.getWeightSample(),
                 config.getWeightGround(),
                 config.getSize(),
+                config.getCustomFormulaCurve(),
+                config.getCustomFormulaCalculation(),
                 config.getCreatedAt(),
                 config.getUpdatedAt()
         );
