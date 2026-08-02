@@ -55,4 +55,10 @@ public class UserController implements UserApi {
         User promoted = userService.promoteToAdmin(dto.email(), userDetails.getUser());
         return ResponseEntity.ok(UserResponseDTO.fromEntity(promoted));
     }
+
+    @Override
+    public ResponseEntity<Void> deleteMyAccount(CustomUserDetails userDetails) {
+        userService.deleteOwnAccount(userDetails.getUser());
+        return ResponseEntity.noContent().build();
+    }
 }

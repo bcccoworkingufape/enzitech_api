@@ -6,6 +6,8 @@ import br.edu.ufape.enzitech.exception.RoleNotAllowedException;
 import br.edu.ufape.enzitech.exception.UserNotFoundException;
 import br.edu.ufape.enzitech.model.User;
 import br.edu.ufape.enzitech.model.enums.Role;
+import br.edu.ufape.enzitech.repository.ExperimentRepository;
+import br.edu.ufape.enzitech.repository.TreatmentRepository;
 import br.edu.ufape.enzitech.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ExperimentRepository experimentRepository;
+    private final TreatmentRepository treatmentRepository;
 
     public Page<User> findAll(Pageable pageable) {
         return userRepository.findAll(pageable);
@@ -74,6 +78,23 @@ public class UserService {
     @Transactional
     public void delete(UUID id) {
         User user = findById(id);
+        eraseUserData(user);
+    }
+
+    @Transactional
+    public void deleteOwnAccount(User user) {
+        eraseUserData(user);
+    }
+
+    private void eraseUserData(User user) {
+        experimentRepository.findByUserId(user.getId()).forEach(experimentRepository::delete);
+        treatmentRepository.findByUserId(user.getId()).forEach(treatmentRepository::delete);
+
+        user.setName("Usuário excluído");
+        user.setEmail("deleted-" + user.getId() + "@enzitech.local");
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        userRepository.saveAndFlush(user);
+
         userRepository.delete(user);
     }
 

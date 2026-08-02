@@ -257,6 +257,20 @@
 						"description": "Concede o papel de ADMIN ao usuário do e-mail informado.\n\nRequer que o usuário autenticado (dono do token em uso) já seja ADMIN — caso contrário devolve 403 Forbidden."
 					},
 					"response": []
+				},
+				{
+					"name": "Excluir Minha Conta",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/me",
+							"host": [ "{{base_url}}" ],
+							"path": [ "users", "me" ]
+						},
+						"description": "Remove definitivamente a conta do usuário autenticado (identificado pelo token em uso), junto com os experimentos e tratamentos criados por ele. Ação irreversível — implementa o direito de exclusão de dados (LGPD/GDPR)."
+					},
+					"response": []
 				}
 			]
 		},

@@ -46,4 +46,8 @@ public interface UserApi {
             @RequestBody @Valid PromoteAdminRequestDTO dto,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     );
+
+    @Operation(summary = "Excluir minha conta", description = "Remove definitivamente a conta do usuário autenticado, junto com os experimentos e tratamentos criados por ele. Ação irreversível.")
+    @DeleteMapping("/me")
+    ResponseEntity<Void> deleteMyAccount(@Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails);
 }
