@@ -5,13 +5,18 @@ import org.springframework.context.annotation.Configuration;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.servers.Server;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 
 @Configuration
 @OpenAPIDefinition(servers = { @Server(url = "/", description = "Servidor VPS / Local") })
 public class SwaggerConfig {
+
+    private static final String SECURITY_SCHEME_NAME = "bearerAuth";
 
     @Bean
     public OpenAPI customOpenAPI() {
@@ -22,6 +27,14 @@ public class SwaggerConfig {
                         .description("API REST para gerenciamento de experimentos e atividades enzimáticas.")
                         .contact(new Contact()
                                 .name("BCC Coworking")
-                                .email("dkdresearchgroup@gmail.com")));
+                                .email("dkdresearchgroup@gmail.com")))
+                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
+                .components(new Components()
+                        .addSecuritySchemes(SECURITY_SCHEME_NAME, new SecurityScheme()
+                                .name(SECURITY_SCHEME_NAME)
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                                .description("Informe apenas o token JWT retornado por POST /auth/login (sem o prefixo Bearer).")));
     }
 }
