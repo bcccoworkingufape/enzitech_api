@@ -13,6 +13,7 @@ Desenvolvido com foco em escalabilidade e segurança, este projeto serve como n�
 * **Banco de Dados:** PostgreSQL
 * **Autenticação e Segurança:** Spring Security + JWT
 * **ORM e Mapeamento:** Hibernate / Spring Data JPA
+* **Migrations de Banco de Dados:** Flyway
 * **Infraestrutura:** Docker & Docker Compose
 * **Gerenciador de Dependências:** Maven
 ---
@@ -47,6 +48,12 @@ Gerencia o catálogo de enzimas disponíveis para os cálculos (ex: Beta-Glicosi
 * `GET /treatments` - Lista todos os tratamentos.
 * `GET /treatments/experiment/{experimentId}` - Lista os tratamentos pertencentes a um experimento específico.
 * `POST /treatments` - Cria um novo tratamento exigindo o objeto e o ID do `experiment` vinculado.
+
+---
+
+## 🗄️ Migrations de Banco de Dados (Flyway)
+
+O schema do banco é versionado via Flyway (`ddl-auto=validate` — o Hibernate não altera mais o banco automaticamente). Toda alteração de schema deve vir acompanhada de uma migration SQL em `src/main/resources/db/migration`. Convenções de nomenclatura, baseline e o fluxo para novas migrations estão detalhados no [README da pasta de migrations](src/main/resources/db/migration/README.md).
 
 ---
 
