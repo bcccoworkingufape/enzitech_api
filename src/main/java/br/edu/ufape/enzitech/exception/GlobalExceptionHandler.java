@@ -13,6 +13,9 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -24,6 +27,7 @@ public class GlobalExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
+        log.warn("Erro de validação: {}", errors);
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errors);
     }
 
@@ -32,6 +36,7 @@ public class GlobalExceptionHandler {
         Map<String, String> error = new HashMap<>();
         error.put("error", ex.getReason());
 
+        log.warn("Erro [{}]: {}", ex.getStatusCode(), ex.getReason());
         return ResponseEntity.status(ex.getStatusCode()).body(error);
     }
 
@@ -43,6 +48,12 @@ public class GlobalExceptionHandler {
 
         Map<String, String> error = new HashMap<>();
         error.put("error", ex.getMessage());
+
+        if (status == HttpStatus.INTERNAL_SERVER_ERROR) {
+            log.error("Erro inesperado não tratado", ex);
+        } else {
+            log.warn("Erro [{}]: {}", status, ex.getMessage());
+        }
 
         return ResponseEntity.status(status).body(error);
     }

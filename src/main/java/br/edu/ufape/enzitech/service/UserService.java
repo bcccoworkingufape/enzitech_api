@@ -10,6 +10,7 @@ import br.edu.ufape.enzitech.repository.ExperimentRepository;
 import br.edu.ufape.enzitech.repository.TreatmentRepository;
 import br.edu.ufape.enzitech.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -50,7 +52,9 @@ public class UserService {
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        log.info("Usuário criado: id={}, email={}, role={}", saved.getId(), saved.getEmail(), saved.getRole());
+        return saved;
     }
 
     @Transactional
@@ -72,17 +76,21 @@ public class UserService {
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        log.info("Usuário atualizado: id={}, email={}", saved.getId(), saved.getEmail());
+        return saved;
     }
 
     @Transactional
     public void delete(UUID id) {
         User user = findById(id);
+        log.info("Usuário removido por admin: id={}, email={}", user.getId(), user.getEmail());
         eraseUserData(user);
     }
 
     @Transactional
     public void deleteOwnAccount(User user) {
+        log.info("Usuário removeu a própria conta: id={}, email={}", user.getId(), user.getEmail());
         eraseUserData(user);
     }
 
@@ -101,6 +109,7 @@ public class UserService {
     @Transactional
     public User promoteToAdmin(String email, User requester) {
         if (requester.getRole() != Role.ADMIN) {
+            log.warn("Tentativa de promoção a admin negada: requester={} não é ADMIN", requester.getEmail());
             throw new RoleNotAllowedException();
         }
 
@@ -109,6 +118,8 @@ public class UserService {
 
         user.setRole(Role.ADMIN);
 
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        log.info("Usuário promovido a ADMIN: id={}, email={}, por={}", saved.getId(), saved.getEmail(), requester.getEmail());
+        return saved;
     }
 }

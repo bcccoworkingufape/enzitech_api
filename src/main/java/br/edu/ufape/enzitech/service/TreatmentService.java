@@ -14,7 +14,9 @@ import br.edu.ufape.enzitech.repository.ExperimentTreatmentRepository;
 import br.edu.ufape.enzitech.repository.TreatmentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TreatmentService {
@@ -33,7 +35,7 @@ public class TreatmentService {
     }
 
     public List<Treatment> findByUser(UUID userId) {
-        return treatmentRepository.findByUserId(userId); 
+        return treatmentRepository.findByUserId(userId);
     }
 
     @Transactional
@@ -41,9 +43,11 @@ public class TreatmentService {
         Treatment treatment = new Treatment();
         treatment.setName(dto.name());
         treatment.setDescription(dto.description());
-        treatment.setUser(user); 
+        treatment.setUser(user);
 
-        return treatmentRepository.save(treatment);
+        Treatment saved = treatmentRepository.save(treatment);
+        log.info("Tratamento criado: id={}, nome={}, usuario={}", saved.getId(), saved.getName(), user.getEmail());
+        return saved;
     }
     @Transactional
     public Treatment save(Treatment treatment) {
@@ -53,6 +57,7 @@ public class TreatmentService {
     @Transactional
     public void delete(UUID id) {
         Treatment treatment = findById(id);
+        log.info("Tratamento removido: id={}, nome={}", treatment.getId(), treatment.getName());
         treatmentRepository.delete(treatment);
     }
 }

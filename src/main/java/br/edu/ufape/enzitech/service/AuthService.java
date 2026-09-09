@@ -24,7 +24,9 @@ import br.edu.ufape.enzitech.repository.UserRepository;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
 import br.edu.ufape.enzitech.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -43,6 +45,7 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(dto.email(), dto.password())
             );
         } catch (BadCredentialsException e) {
+            log.warn("Tentativa de login falhou: email={}", dto.email());
             throw new InvalidCredentialsException();
         }
 
@@ -51,6 +54,7 @@ public class AuthService {
         CustomUserDetails userDetails = new CustomUserDetails(user);
         String jwtToken = jwtService.generateToken(userDetails);
 
+        log.info("Login bem-sucedido: id={}, email={}", user.getId(), user.getEmail());
         return new AuthResponseDTO(jwtToken, UserResponseDTO.fromEntity(user));
     }
 
@@ -76,6 +80,7 @@ public class AuthService {
         tokenRepository.save(resetToken);
 
         mailService.sendPasswordResetEmail(user.getEmail(), user.getName(), pinCode);
+        log.info("PIN de recuperação de senha enviado: email={}", user.getEmail());
     }
 
     @Transactional
@@ -100,6 +105,7 @@ public class AuthService {
         userRepository.save(user);
 
         tokenRepository.delete(resetToken);
+        log.info("Senha redefinida com sucesso: email={}", user.getEmail());
     }
 
     public void verifyPin(String email, String token) {
