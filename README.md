@@ -57,6 +57,19 @@ O schema do banco é versionado via Flyway (`ddl-auto=validate` — o Hibernate 
 
 ---
 
+## 💾 Backup do Banco de Dados (Produção)
+
+O container `db-backup` (definido no `docker-compose.yml`) roda `pg_dump` diariamente contra o container `db` e mantém a rotação dos arquivos (7 diários, 4 semanais, 6 mensais) em `./backups` na VPS — fora dos containers, então sobrevive a `docker compose up`/recriação do serviço.
+
+Restaurar um backup:
+```bash
+gunzip -c backups/daily/enzitech-<timestamp>.sql.gz | docker compose exec -T db bash -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+Isso cobre corrupção de dados, `DROP`/`DELETE` acidental e falhas de migration — não é um backup off-site (ainda depende do disco da mesma VPS). Se a VPS falhar por completo, os backups vão junto; vale copiar periodicamente `./backups` para fora do servidor (S3, Backblaze, etc.) caso esse cenário seja uma preocupação.
+
+---
+
 ## ⚙️ Como Rodar o Projeto (Ambiente de Desenvolvimento)
 
 ### Pré-requisitos
