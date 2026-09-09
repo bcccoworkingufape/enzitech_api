@@ -1,8 +1,14 @@
 version: '3.8'
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   api:
-    image: ghcr.io/seu_usuario/seu_repositorio:latest
+    image: ghcr.io/bcccoworkingufape/enzitech_api:latest
     restart: always
     ports:
       - "8082:8080"
@@ -13,9 +19,10 @@ services:
     networks:
       - default
       - mail
+    logging: *default-logging
 
   db:
-    image: postgres:13
+    image: postgres:17
     restart: always
     environment:
       POSTGRES_USER: ${DB_USERNAME}
@@ -24,10 +31,30 @@ services:
     ports:
       - "5434:5432"
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - ./banco:/var/lib/postgresql/data
+    networks:
+      - mail
+    logging: *default-logging
 
-volumes:
-  pg_data:
+  db-backup:
+    image: prodrigestivill/postgres-backup-local:17
+    restart: always
+    depends_on:
+      - db
+    networks:
+      - mail
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: 7
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 6
+    volumes:
+      - ./backups:/backups
+    logging: *default-logging
 
 networks:
   mail:
