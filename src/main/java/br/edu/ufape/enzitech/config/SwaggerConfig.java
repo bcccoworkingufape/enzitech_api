@@ -23,7 +23,7 @@ public class SwaggerConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Enzitech API")
-                        .version("0.0.1")
+                        .version("1.0.0")
                         .description("API REST para gerenciamento de experimentos e atividades enzimáticas.")
                         .contact(new Contact()
                                 .name("BCC Coworking")
