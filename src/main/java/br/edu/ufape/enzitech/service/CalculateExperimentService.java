@@ -61,13 +61,8 @@ public class CalculateExperimentService {
                 config.getId(), config.getName(),
                 dto.repetitionNumber(), slot.getStatus().name(),
                 dto.sample(), dto.whiteSample(),
-                detail.difference(), detail.curve(), forDisplay(detail.finalResult())
+                detail.difference(), detail.curve(), detail.finalResult()
         );
-    }
-
-    // O valor persistido pode ser negativo (ruido de medicao); a exibicao ao usuario final nunca mostra atividade enzimatica negativa.
-    private static double forDisplay(double result) {
-        return Math.max(0.0, result);
     }
 
     @Transactional
@@ -219,7 +214,7 @@ public class CalculateExperimentService {
                             config.getDuration().intValue(),
                             config.getSize(),
                             config.getWeightSample(),
-                            forDisplay(r.getResult())
+                            r.getResult()
                     ));
                 }
 

@@ -31,12 +31,7 @@ public record RepetitionResponseDTO(
                 repetition.getWhiteSample(),
                 repetition.getDifferenceBetweenSamples(),
                 repetition.getCurve(),
-                forDisplay(repetition.getResult())
+                repetition.getResult()
         );
-    }
-
-    // O valor persistido pode ser negativo (ruido de medicao); a exibicao ao usuario final nunca mostra atividade enzimatica negativa.
-    private static Double forDisplay(Double result) {
-        return result == null ? null : Math.max(0.0, result);
     }
 }
