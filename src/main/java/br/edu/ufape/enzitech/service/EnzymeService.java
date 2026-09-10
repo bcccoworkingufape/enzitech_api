@@ -35,18 +35,23 @@ public class EnzymeService {
         enzyme.setType(dto.type());
         enzyme.setVariableA(dto.variableA());
         enzyme.setVariableB(dto.variableB());
-        enzyme.setDescription(getFormulaEnzyme(dto.type()));
-        enzyme.setFormulaCurve("(difference - variableB) / variableA"); 
-        
-        if (dto.type().equals("Urease")) {
-            enzyme.setFormulaCalculation("(curve * size) / (duration * weightSample * weightGround)");
-        } else {
-            enzyme.setFormulaCalculation("(curve * size) / (duration * weightSample * weightGround)");
-        }
+        applyFormulas(enzyme, dto.type());
 
         enzyme.setCreatedAt(LocalDateTime.now());
         enzyme.setUpdatedAt(LocalDateTime.now());
         return enzymeRepository.save(enzyme);
+    }
+
+    // Urease nao usa duracao de incubacao e tem fator multiplicativo proprio (x10); os demais tipos compartilham a formula.
+    private void applyFormulas(Enzyme enzyme, String type) {
+        enzyme.setDescription(getFormulaEnzyme(type));
+        enzyme.setFormulaCurve("(difference - variableB) / variableA");
+
+        if ("Urease".equals(type)) {
+            enzyme.setFormulaCalculation("(curve * size * 10) / (weightSample * weightGround)");
+        } else {
+            enzyme.setFormulaCalculation("(curve * size) / (duration * weightSample * weightGround)");
+        }
     }
 
     private String getFormulaEnzyme(String enzymeType) {
@@ -67,7 +72,7 @@ public class EnzymeService {
         enzyme.setType(dto.type());
         enzyme.setVariableA(dto.variableA());
         enzyme.setVariableB(dto.variableB());
-        enzyme.setDescription(getFormulaEnzyme(dto.type()));
+        applyFormulas(enzyme, dto.type());
         enzyme.setCreatedAt(LocalDateTime.now());
         enzyme.setUpdatedAt(LocalDateTime.now());
         return enzymeRepository.save(enzyme);

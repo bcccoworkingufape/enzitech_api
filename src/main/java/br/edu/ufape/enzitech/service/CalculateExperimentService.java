@@ -61,8 +61,13 @@ public class CalculateExperimentService {
                 config.getId(), config.getName(),
                 dto.repetitionNumber(), slot.getStatus().name(),
                 dto.sample(), dto.whiteSample(),
-                detail.difference(), detail.curve(), detail.finalResult()
+                detail.difference(), detail.curve(), forDisplay(detail.finalResult())
         );
+    }
+
+    // O valor persistido pode ser negativo (ruido de medicao); a exibicao ao usuario final nunca mostra atividade enzimatica negativa.
+    private static double forDisplay(double result) {
+        return Math.max(0.0, result);
     }
 
     @Transactional
@@ -149,7 +154,7 @@ public class CalculateExperimentService {
                 .setVariable("weightGround", weightGround)
                 .evaluate();
 
-        if (Double.isNaN(finalResult) || Double.isInfinite(finalResult) || finalResult < 0) {
+        if (Double.isNaN(finalResult) || Double.isInfinite(finalResult)) {
             return 0.0;
         }
 
@@ -210,11 +215,11 @@ public class CalculateExperimentService {
                             config.getVariableA(),
                             config.getVariableB(),
                             r.getCurve(),
-                            0.0,
+                            config.getWeightGround(),
                             config.getDuration().intValue(),
                             config.getSize(),
                             config.getWeightSample(),
-                            r.getResult()
+                            forDisplay(r.getResult())
                     ));
                 }
 
