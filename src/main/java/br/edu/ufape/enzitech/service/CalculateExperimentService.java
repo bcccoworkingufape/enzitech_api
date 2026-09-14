@@ -37,6 +37,7 @@ public class CalculateExperimentService {
     private final ExperimentEnzymeRepository experimentEnzymeRepository;
     private final ResultExperimentRepository resultRepository;
     private final ExperimentRepository experimentRepository;
+    private final ResultSignatureService resultSignatureService;
 
     @Transactional(readOnly = true)
     public List<RepetitionResponseDTO> getRepetitions(UUID experimentId) {
@@ -86,6 +87,7 @@ public class CalculateExperimentService {
         long totalSlots = resultRepository.countByExperimentId(experimentId);
         long completedSlots = resultRepository.countByExperimentIdAndStatus(experimentId, RepetitionStatus.COMPLETED);
         experiment.setProgress(totalSlots > 0 ? (double) completedSlots / totalSlots : 0.0);
+        resultSignatureService.signIfComplete(experiment);
         experimentRepository.save(experiment);
 
         return ExperimentResponseDTO.fromEntity(experiment);

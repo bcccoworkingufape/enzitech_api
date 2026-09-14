@@ -16,10 +16,12 @@ public record ExperimentResponseDTO(
         UserResponseDTO user,
         List<TreatmentResponseDTO> processes,
         List<ExperimentEnzymeResponseDTO> experimentEnzymes, 
-        List<EnzymeResponseDTO> enzymes, 
-        
+        List<EnzymeResponseDTO> enzymes,
+
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        String resultsHash,
+        LocalDateTime resultsSignedAt
 ) {
     public static ExperimentResponseDTO fromEntity(Experiment experiment) {
         return new ExperimentResponseDTO(
@@ -46,7 +48,9 @@ public record ExperimentResponseDTO(
                                 .toList() :
                         List.of(),
                 experiment.getCreatedAt(),
-                experiment.getUpdatedAt()
+                experiment.getUpdatedAt(),
+                experiment.getResultsHash(),
+                experiment.getResultsSignedAt()
         );
     }
 }
