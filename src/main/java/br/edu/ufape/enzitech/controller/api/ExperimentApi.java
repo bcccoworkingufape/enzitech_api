@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import br.edu.ufape.enzitech.dto.request.ExperimentRequestDTO;
 import br.edu.ufape.enzitech.dto.request.SaveRepetitionRequestDTO;
 import br.edu.ufape.enzitech.dto.response.EnzymeResponseDTO;
+import br.edu.ufape.enzitech.dto.response.ExperimentIntegrityResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentPaginationResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResultWrapperDTO;
@@ -90,4 +91,8 @@ public interface ExperimentApi {
     @Operation(summary = "Obter Resultado Total do Experimento")
     @GetMapping("/get-total-result/{id}")
     ResponseEntity<ExperimentResultWrapperDTO> getTotalResult(@PathVariable UUID id);
+
+    @Operation(summary = "Verificar Integridade dos Resultados", description = "Recalcula o hash SHA-256 dos resultados e compara com a assinatura gerada no fechamento do experimento (progress = 100%), detectando alterações feitas após a assinatura.")
+    @GetMapping("/{id}/integrity")
+    ResponseEntity<ExperimentIntegrityResponseDTO> verifyIntegrity(@PathVariable UUID id);
 }

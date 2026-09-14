@@ -12,6 +12,7 @@ import br.edu.ufape.enzitech.controller.api.ExperimentApi;
 import br.edu.ufape.enzitech.dto.request.ExperimentRequestDTO;
 import br.edu.ufape.enzitech.dto.request.SaveRepetitionRequestDTO;
 import br.edu.ufape.enzitech.dto.response.EnzymeResponseDTO;
+import br.edu.ufape.enzitech.dto.response.ExperimentIntegrityResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentPaginationResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResultWrapperDTO;
@@ -21,6 +22,7 @@ import br.edu.ufape.enzitech.model.Experiment;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
 import br.edu.ufape.enzitech.service.CalculateExperimentService;
 import br.edu.ufape.enzitech.service.ExperimentService;
+import br.edu.ufape.enzitech.service.ResultSignatureService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -30,6 +32,8 @@ public class ExperimentController implements ExperimentApi {
     private final ExperimentService experimentService;
 
     private final CalculateExperimentService calculateExperimentService;
+
+    private final ResultSignatureService resultSignatureService;
 
 
     @Override
@@ -104,5 +108,10 @@ public class ExperimentController implements ExperimentApi {
         ExperimentResultWrapperDTO wrapper = new ExperimentResultWrapperDTO(totalResultList);
 
         return ResponseEntity.ok(wrapper);
+    }
+
+    @Override
+    public ResponseEntity<ExperimentIntegrityResponseDTO> verifyIntegrity(UUID id) {
+        return ResponseEntity.ok(ExperimentIntegrityResponseDTO.fromResult(resultSignatureService.verifyIntegrity(id)));
     }
 }
