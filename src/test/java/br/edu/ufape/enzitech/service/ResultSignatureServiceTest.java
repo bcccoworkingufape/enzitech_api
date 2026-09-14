@@ -1,9 +1,13 @@
 package br.edu.ufape.enzitech.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -14,10 +18,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.edu.ufape.enzitech.model.Experiment;
 import br.edu.ufape.enzitech.model.ExperimentEnzyme;
+import br.edu.ufape.enzitech.model.ExperimentSignature;
 import br.edu.ufape.enzitech.model.ExperimentTreatment;
 import br.edu.ufape.enzitech.model.RepetitionStatus;
 import br.edu.ufape.enzitech.model.ResultExperiment;
 import br.edu.ufape.enzitech.repository.ExperimentRepository;
+import br.edu.ufape.enzitech.repository.ExperimentSignatureRepository;
 import br.edu.ufape.enzitech.repository.ResultExperimentRepository;
 import br.edu.ufape.enzitech.service.ResultSignatureService.IntegrityCheckResult;
 
@@ -30,6 +36,9 @@ class ResultSignatureServiceTest {
     @Mock
     private ExperimentRepository experimentRepository;
 
+    @Mock
+    private ExperimentSignatureRepository experimentSignatureRepository;
+
     private ResultSignatureService resultSignatureService;
 
     private UUID experimentId;
@@ -38,7 +47,8 @@ class ResultSignatureServiceTest {
 
     @BeforeEach
     void setUp() {
-        resultSignatureService = new ResultSignatureService(resultExperimentRepository, experimentRepository);
+        resultSignatureService = new ResultSignatureService(
+                resultExperimentRepository, experimentRepository, experimentSignatureRepository);
 
         experimentId = UUID.randomUUID();
 
@@ -65,19 +75,19 @@ class ResultSignatureServiceTest {
     }
 
     @Test
-    void signIfComplete_doesNothing_whenProgressNotFull() {
+    void reconcileSignature_doesNothing_whenProgressNotFull() {
         Experiment experiment = new Experiment();
         experiment.setId(experimentId);
         experiment.setProgress(0.5);
 
-        resultSignatureService.signIfComplete(experiment);
+        resultSignatureService.reconcileSignature(experiment);
 
         assertThat(experiment.getResultsHash()).isNull();
         assertThat(experiment.getResultsSignedAt()).isNull();
     }
 
     @Test
-    void signIfComplete_generatesHash_whenProgressReaches100Percent() {
+    void reconcileSignature_generatesHash_whenProgressReaches100Percent() {
         Experiment experiment = new Experiment();
         experiment.setId(experimentId);
         experiment.setProgress(1.0);
@@ -85,22 +95,63 @@ class ResultSignatureServiceTest {
         when(resultExperimentRepository.findByExperimentId(experimentId))
                 .thenReturn(List.of(completedResult(1, 42.0)));
 
-        resultSignatureService.signIfComplete(experiment);
+        resultSignatureService.reconcileSignature(experiment);
 
         assertThat(experiment.getResultsHash()).isNotBlank().hasSize(64);
         assertThat(experiment.getResultsSignedAt()).isNotNull();
+        verify(experimentSignatureRepository, times(1)).save(any(ExperimentSignature.class));
     }
 
     @Test
-    void signIfComplete_doesNotOverwrite_existingSignature() {
+    void reconcileSignature_doesNotOverwrite_existingSignature() {
         Experiment experiment = new Experiment();
         experiment.setId(experimentId);
         experiment.setProgress(1.0);
         experiment.setResultsHash("already-signed");
 
-        resultSignatureService.signIfComplete(experiment);
+        resultSignatureService.reconcileSignature(experiment);
 
         assertThat(experiment.getResultsHash()).isEqualTo("already-signed");
+        verify(experimentSignatureRepository, times(0)).save(any(ExperimentSignature.class));
+    }
+
+    @Test
+    void reconcileSignature_clearsCurrentHash_whenExperimentReopens() {
+        Experiment experiment = new Experiment();
+        experiment.setId(experimentId);
+        experiment.setProgress(0.8);
+        experiment.setResultsHash("hash-from-previous-closing");
+        experiment.setResultsSignedAt(java.time.LocalDateTime.now().minusDays(1));
+
+        resultSignatureService.reconcileSignature(experiment);
+
+        assertThat(experiment.getResultsHash()).isNull();
+        assertThat(experiment.getResultsSignedAt()).isNull();
+        verify(experimentSignatureRepository, times(0)).save(any(ExperimentSignature.class));
+    }
+
+    @Test
+    void reconcileSignature_generatesNewSignature_whenExperimentClosesAgainAfterReopening() {
+        Experiment experiment = new Experiment();
+        experiment.setId(experimentId);
+
+        experiment.setProgress(1.0);
+        when(resultExperimentRepository.findByExperimentId(experimentId))
+                .thenReturn(List.of(completedResult(1, 42.0)));
+        resultSignatureService.reconcileSignature(experiment);
+        String firstHash = experiment.getResultsHash();
+
+        experiment.setProgress(0.5);
+        resultSignatureService.reconcileSignature(experiment);
+        assertThat(experiment.getResultsHash()).isNull();
+
+        experiment.setProgress(1.0);
+        when(resultExperimentRepository.findByExperimentId(experimentId))
+                .thenReturn(List.of(completedResult(1, 42.0), completedResult(2, 99.0)));
+        resultSignatureService.reconcileSignature(experiment);
+
+        assertThat(experiment.getResultsHash()).isNotBlank().isNotEqualTo(firstHash);
+        verify(experimentSignatureRepository, times(2)).save(any(ExperimentSignature.class));
     }
 
     @Test
@@ -112,8 +163,8 @@ class ResultSignatureServiceTest {
         List<ResultExperiment> results = List.of(completedResult(1, 42.0));
         when(resultExperimentRepository.findByExperimentId(experimentId)).thenReturn(results);
 
-        resultSignatureService.signIfComplete(experiment);
-        when(experimentRepository.findById(experimentId)).thenReturn(java.util.Optional.of(experiment));
+        resultSignatureService.reconcileSignature(experiment);
+        when(experimentRepository.findById(experimentId)).thenReturn(Optional.of(experiment));
 
         IntegrityCheckResult check = resultSignatureService.verifyIntegrity(experimentId);
 
@@ -130,9 +181,9 @@ class ResultSignatureServiceTest {
 
         ResultExperiment original = completedResult(1, 42.0);
         when(resultExperimentRepository.findByExperimentId(experimentId)).thenReturn(List.of(original));
-        resultSignatureService.signIfComplete(experiment);
+        resultSignatureService.reconcileSignature(experiment);
 
-        when(experimentRepository.findById(experimentId)).thenReturn(java.util.Optional.of(experiment));
+        when(experimentRepository.findById(experimentId)).thenReturn(Optional.of(experiment));
 
         original.setResult(999.0);
 
@@ -148,11 +199,23 @@ class ResultSignatureServiceTest {
         experiment.setId(experimentId);
         experiment.setProgress(0.5);
 
-        when(experimentRepository.findById(experimentId)).thenReturn(java.util.Optional.of(experiment));
+        when(experimentRepository.findById(experimentId)).thenReturn(Optional.of(experiment));
 
         IntegrityCheckResult check = resultSignatureService.verifyIntegrity(experimentId);
 
         assertThat(check.signed()).isFalse();
         assertThat(check.valid()).isFalse();
+    }
+
+    @Test
+    void getHistory_returnsAllPastSignatures_mostRecentFirst() {
+        ExperimentSignature older = new ExperimentSignature();
+        ExperimentSignature newer = new ExperimentSignature();
+        when(experimentSignatureRepository.findByExperimentIdOrderBySignedAtDesc(experimentId))
+                .thenReturn(List.of(newer, older));
+
+        List<ExperimentSignature> history = resultSignatureService.getHistory(experimentId);
+
+        assertThat(history).containsExactly(newer, older);
     }
 }
