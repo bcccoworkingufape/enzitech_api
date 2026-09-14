@@ -13,9 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.edu.ufape.enzitech.model.Experiment;
+import br.edu.ufape.enzitech.model.ExperimentSignature;
 import br.edu.ufape.enzitech.model.RepetitionStatus;
 import br.edu.ufape.enzitech.model.ResultExperiment;
 import br.edu.ufape.enzitech.repository.ExperimentRepository;
+import br.edu.ufape.enzitech.repository.ExperimentSignatureRepository;
 import br.edu.ufape.enzitech.repository.ResultExperimentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -26,18 +28,39 @@ public class ResultSignatureService {
 
     private final ResultExperimentRepository resultExperimentRepository;
     private final ExperimentRepository experimentRepository;
+    private final ExperimentSignatureRepository experimentSignatureRepository;
 
     /**
-     * Assina o experimento (hash SHA-256 dos resultados) na primeira vez em que ele fica 100%
-     * concluído. Não sobrescreve uma assinatura já existente — qualquer resultado alterado depois
-     * da assinatura passa a divergir do hash original, o que é detectado em {@link #verifyIntegrity}.
+     * Mantém a assinatura do experimento coerente com o progresso atual. Deve ser chamado sempre
+     * que o progresso é recalculado (criação, edição de tratamentos/enzimas, conclusão de
+     * repetição). Se o experimento não está mais 100% concluído (foi reaberto), a assinatura
+     * corrente é limpa — sem, no entanto, apagar o histórico já gravado em
+     * {@link ExperimentSignature}. Se está 100% concluído e ainda não tem assinatura corrente,
+     * uma nova é gerada e registrada no histórico, representando este fechamento específico.
      */
-    public void signIfComplete(Experiment experiment) {
-        if (experiment.getResultsHash() != null) return;
-        if (experiment.getProgress() == null || experiment.getProgress() < 1.0) return;
+    @Transactional
+    public void reconcileSignature(Experiment experiment) {
+        boolean isComplete = experiment.getProgress() != null && experiment.getProgress() >= 1.0;
 
-        experiment.setResultsHash(computeHash(experiment.getId()));
-        experiment.setResultsSignedAt(LocalDateTime.now());
+        if (!isComplete) {
+            experiment.setResultsHash(null);
+            experiment.setResultsSignedAt(null);
+            return;
+        }
+
+        if (experiment.getResultsHash() != null) return;
+
+        String hash = computeHash(experiment.getId());
+        LocalDateTime signedAt = LocalDateTime.now();
+
+        ExperimentSignature signature = new ExperimentSignature();
+        signature.setExperiment(experiment);
+        signature.setResultsHash(hash);
+        signature.setSignedAt(signedAt);
+        experimentSignatureRepository.save(signature);
+
+        experiment.setResultsHash(hash);
+        experiment.setResultsSignedAt(signedAt);
     }
 
     @Transactional(readOnly = true)
@@ -52,6 +75,11 @@ public class ResultSignatureService {
         String currentHash = computeHash(experimentId);
         boolean valid = currentHash.equals(experiment.getResultsHash());
         return new IntegrityCheckResult(true, valid, experiment.getResultsHash(), experiment.getResultsSignedAt());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExperimentSignature> getHistory(UUID experimentId) {
+        return experimentSignatureRepository.findByExperimentIdOrderBySignedAtDesc(experimentId);
     }
 
     private String computeHash(UUID experimentId) {

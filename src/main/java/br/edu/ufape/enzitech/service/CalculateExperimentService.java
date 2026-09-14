@@ -87,7 +87,7 @@ public class CalculateExperimentService {
         long totalSlots = resultRepository.countByExperimentId(experimentId);
         long completedSlots = resultRepository.countByExperimentIdAndStatus(experimentId, RepetitionStatus.COMPLETED);
         experiment.setProgress(totalSlots > 0 ? (double) completedSlots / totalSlots : 0.0);
-        resultSignatureService.signIfComplete(experiment);
+        resultSignatureService.reconcileSignature(experiment);
         experimentRepository.save(experiment);
 
         return ExperimentResponseDTO.fromEntity(experiment);

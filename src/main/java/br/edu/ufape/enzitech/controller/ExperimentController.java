@@ -16,6 +16,7 @@ import br.edu.ufape.enzitech.dto.response.ExperimentIntegrityResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentPaginationResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResultWrapperDTO;
+import br.edu.ufape.enzitech.dto.response.ExperimentSignatureResponseDTO;
 import br.edu.ufape.enzitech.dto.response.RepetitionResponseDTO;
 import br.edu.ufape.enzitech.dto.response.TotalResultExperimentDTO;
 import br.edu.ufape.enzitech.model.Experiment;
@@ -113,5 +114,13 @@ public class ExperimentController implements ExperimentApi {
     @Override
     public ResponseEntity<ExperimentIntegrityResponseDTO> verifyIntegrity(UUID id) {
         return ResponseEntity.ok(ExperimentIntegrityResponseDTO.fromResult(resultSignatureService.verifyIntegrity(id)));
+    }
+
+    @Override
+    public ResponseEntity<List<ExperimentSignatureResponseDTO>> getIntegrityHistory(UUID id) {
+        List<ExperimentSignatureResponseDTO> history = resultSignatureService.getHistory(id).stream()
+                .map(ExperimentSignatureResponseDTO::fromEntity)
+                .toList();
+        return ResponseEntity.ok(history);
     }
 }

@@ -22,6 +22,7 @@ import br.edu.ufape.enzitech.dto.response.ExperimentIntegrityResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentPaginationResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResponseDTO;
 import br.edu.ufape.enzitech.dto.response.ExperimentResultWrapperDTO;
+import br.edu.ufape.enzitech.dto.response.ExperimentSignatureResponseDTO;
 import br.edu.ufape.enzitech.dto.response.RepetitionResponseDTO;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -92,7 +93,11 @@ public interface ExperimentApi {
     @GetMapping("/get-total-result/{id}")
     ResponseEntity<ExperimentResultWrapperDTO> getTotalResult(@PathVariable UUID id);
 
-    @Operation(summary = "Verificar Integridade dos Resultados", description = "Recalcula o hash SHA-256 dos resultados e compara com a assinatura gerada no fechamento do experimento (progress = 100%), detectando alterações feitas após a assinatura.")
+    @Operation(summary = "Verificar Integridade dos Resultados", description = "Recalcula o hash SHA-256 dos resultados e compara com a assinatura corrente do experimento (gerada no último fechamento, progress = 100%), detectando alterações feitas após a assinatura.")
     @GetMapping("/{id}/integrity")
     ResponseEntity<ExperimentIntegrityResponseDTO> verifyIntegrity(@PathVariable UUID id);
+
+    @Operation(summary = "Histórico de Assinaturas", description = "Lista todas as assinaturas (hashes) geradas ao longo dos fechamentos do experimento, da mais recente para a mais antiga. Cada reabertura (ex.: adição de tratamentos/enzimas) seguida de novo fechamento gera uma nova entrada, preservando o histórico anterior.")
+    @GetMapping("/{id}/integrity/history")
+    ResponseEntity<List<ExperimentSignatureResponseDTO>> getIntegrityHistory(@PathVariable UUID id);
 }
