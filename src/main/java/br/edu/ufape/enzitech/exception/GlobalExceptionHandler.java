@@ -13,11 +13,17 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashMap;
 import java.util.Map;
 
+import br.edu.ufape.enzitech.model.enums.AuditAction;
+import br.edu.ufape.enzitech.service.AuditService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final AuditService auditService;
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
@@ -37,6 +43,7 @@ public class GlobalExceptionHandler {
         error.put("error", ex.getReason());
 
         log.warn("Erro [{}]: {}", ex.getStatusCode(), ex.getReason());
+        audit(ex.getStatusCode().value(), ex);
         return ResponseEntity.status(ex.getStatusCode()).body(error);
     }
 
@@ -55,6 +62,16 @@ public class GlobalExceptionHandler {
             log.warn("Erro [{}]: {}", status, ex.getMessage());
         }
 
+        audit(status.value(), ex);
         return ResponseEntity.status(status).body(error);
+    }
+
+    private void audit(int status, Throwable ex) {
+        String reason = ex.getClass().getSimpleName() + ": " + ex.getMessage();
+        if (status == HttpStatus.FORBIDDEN.value()) {
+            auditService.record(AuditAction.ACESSO_NEGADO, status, reason);
+        } else if (status >= HttpStatus.INTERNAL_SERVER_ERROR.value()) {
+            auditService.record(AuditAction.ERRO, status, reason);
+        }
     }
 }

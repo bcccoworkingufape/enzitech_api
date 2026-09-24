@@ -19,6 +19,7 @@ import br.edu.ufape.enzitech.dto.response.UserResponseDTO;
 import br.edu.ufape.enzitech.exception.InvalidCredentialsException;
 import br.edu.ufape.enzitech.model.PasswordResetToken;
 import br.edu.ufape.enzitech.model.User;
+import br.edu.ufape.enzitech.model.enums.AuditAction;
 import br.edu.ufape.enzitech.repository.PasswordResetTokenRepository;
 import br.edu.ufape.enzitech.repository.UserRepository;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
@@ -37,6 +38,7 @@ public class AuthService {
 
     private final PasswordResetTokenRepository tokenRepository;
     private final MailService mailService;
+    private final AuditService auditService;
     private final PasswordEncoder passwordEncoder;
 
     public AuthResponseDTO login(LoginRequestDTO dto) {
@@ -46,6 +48,8 @@ public class AuthService {
             );
         } catch (BadCredentialsException e) {
             log.warn("Tentativa de login falhou: email={}", dto.email());
+            auditService.record(AuditAction.LOGIN_FALHOU, HttpStatus.BAD_REQUEST.value(), dto.email(),
+                    e.getClass().getSimpleName());
             throw new InvalidCredentialsException();
         }
 

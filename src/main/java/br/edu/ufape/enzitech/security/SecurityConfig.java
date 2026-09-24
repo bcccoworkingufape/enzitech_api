@@ -10,6 +10,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import br.edu.ufape.enzitech.model.enums.AuditAction;
+import br.edu.ufape.enzitech.service.AuditService;
+
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final AuditService auditService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -37,7 +41,15 @@ public class SecurityConfig {
         )
         .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint((request, response, authException) -> {
-                    response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, "Token inválido, expirado ou revogado");
+                    Object jwtReason = request.getAttribute(JwtAuthenticationFilter.AUTH_FAILURE_REASON);
+                    String reason = jwtReason != null ? jwtReason.toString() : authException.getClass().getSimpleName();
+                    auditService.record(AuditAction.NAO_AUTORIZADO, HttpServletResponse.SC_UNAUTHORIZED, reason);
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido, expirado ou revogado");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    auditService.record(AuditAction.ACESSO_NEGADO, HttpServletResponse.SC_FORBIDDEN,
+                            accessDeniedException.getClass().getSimpleName());
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Acesso negado");
                 })
         )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

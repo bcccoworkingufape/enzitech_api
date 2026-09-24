@@ -24,6 +24,8 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    public static final String AUTH_FAILURE_REASON = "authFailureReason";
+
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
@@ -64,6 +66,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (JwtException | IllegalArgumentException | UsernameNotFoundException e) {
             log.warn("Token JWT rejeitado: {}", e.getMessage());
+            request.setAttribute(AUTH_FAILURE_REASON, e.getClass().getSimpleName());
         }
 
         filterChain.doFilter(request, response);
