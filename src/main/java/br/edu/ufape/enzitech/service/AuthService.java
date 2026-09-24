@@ -54,7 +54,7 @@ public class AuthService {
         CustomUserDetails userDetails = new CustomUserDetails(user);
         String jwtToken = jwtService.generateToken(userDetails);
 
-        log.info("Login bem-sucedido: id={}, email={}", user.getId(), user.getEmail());
+        log.info("Login bem-sucedido: email={}", user.getEmail());
         return new AuthResponseDTO(jwtToken, UserResponseDTO.fromEntity(user));
     }
 
