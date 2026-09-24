@@ -99,13 +99,20 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"A nova senha não pode ser igual à senha atual.");
         }
 
+        LocalDateTime changedAt = LocalDateTime.now();
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
-        user.setCredentialsUpdatedAt(LocalDateTime.now());
+        user.setCredentialsUpdatedAt(changedAt);
 
         userRepository.save(user);
 
         tokenRepository.delete(resetToken);
         log.info("Senha redefinida com sucesso: email={}", user.getEmail());
+
+        try {
+            mailService.sendPasswordChangedEmail(user.getEmail(), user.getName(), changedAt);
+        } catch (RuntimeException e) {
+            log.error("Falha ao enviar e-mail de senha alterada: email={}", user.getEmail(), e);
+        }
     }
 
     public void verifyPin(String email, String token) {
