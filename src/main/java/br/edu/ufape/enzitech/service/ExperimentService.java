@@ -41,6 +41,7 @@ public class ExperimentService {
     private final ExperimentEnzymeRepository experimentEnzymeRepository;
     private final ExperimentTreatmentRepository experimentTreatmentRepository;
     private final ResultExperimentRepository resultExperimentRepository;
+    private final ResultSignatureService resultSignatureService;
 
 
     public List<Experiment> findAllByUserId(UUID userId, Boolean finished) {
@@ -94,6 +95,7 @@ public class ExperimentService {
 
         reconcileRepetitionSlots(savedExperiment);
         recalculateProgress(savedExperiment);
+        resultSignatureService.reconcileSignature(savedExperiment);
 
         return experimentRepository.save(savedExperiment);
     }
@@ -115,6 +117,7 @@ public class ExperimentService {
         reconcileEnzymes(experiment, dto.experimentsEnzymes());
         reconcileRepetitionSlots(experiment);
         recalculateProgress(experiment);
+        resultSignatureService.reconcileSignature(experiment);
 
         return experimentRepository.save(experiment);
     }

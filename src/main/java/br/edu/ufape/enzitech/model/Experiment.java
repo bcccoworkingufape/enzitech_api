@@ -44,6 +44,12 @@ public class Experiment extends BaseEntity {
     @OneToMany(mappedBy = "experiment")
     private List<ExperimentTreatment> experimentTreatments;
 
+    @Column(name = "results_hash", length = 64)
+    private String resultsHash;
+
+    @Column(name = "results_signed_at")
+    private LocalDateTime resultsSignedAt;
+
     @PrePersist
     protected void onCreate() {
         this.setCreatedAt(LocalDateTime.now());
