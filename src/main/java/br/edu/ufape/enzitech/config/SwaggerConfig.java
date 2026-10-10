@@ -1,5 +1,7 @@
 package br.edu.ufape.enzitech.config;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,11 +21,14 @@ public class SwaggerConfig {
     private static final String SECURITY_SCHEME_NAME = "bearerAuth";
 
     @Bean
-    public OpenAPI customOpenAPI() {
+    public OpenAPI customOpenAPI(ObjectProvider<BuildProperties> buildProperties) {
+        BuildProperties build = buildProperties.getIfAvailable();
+        String version = build != null ? build.getVersion() : "dev";
+
         return new OpenAPI()
                 .info(new Info()
                         .title("Enzitech API")
-                        .version("1.0.0")
+                        .version(version)
                         .description("API REST para gerenciamento de experimentos e atividades enzimáticas.")
                         .contact(new Contact()
                                 .name("BCC Coworking")
