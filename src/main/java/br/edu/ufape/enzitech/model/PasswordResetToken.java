@@ -22,6 +22,9 @@ public class PasswordResetToken extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime expiryDate;
 
+    @Column(nullable = false)
+    private int attempts = 0;
+
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(this.expiryDate);
     }
