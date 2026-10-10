@@ -24,15 +24,15 @@ public interface EnzymeApi {
     @GetMapping("/{id}")
     ResponseEntity<EnzymeResponseDTO> getEnzymeById(@PathVariable UUID id);
 
-    @Operation(summary = "Criar Enzima", description = "Regista uma nova enzima com as suas fórmulas matemáticas.")
+    @Operation(summary = "Criar Enzima", description = "Regista uma nova enzima com as suas fórmulas matemáticas. Requer ADMIN.")
     @PostMapping
     ResponseEntity<EnzymeResponseDTO> createEnzyme(@RequestBody @Valid EnzymeRequestDTO dto);
 
-    @Operation(summary = "Atualizar Enzima", description = "Atualiza os dados e fórmulas de uma enzima.")
+    @Operation(summary = "Atualizar Enzima", description = "Atualiza os dados e fórmulas de uma enzima. Requer ADMIN.")
     @PutMapping("/{id}")
     ResponseEntity<EnzymeResponseDTO> updateEnzyme(@PathVariable UUID id, @RequestBody @Valid EnzymeRequestDTO dto);
 
-    @Operation(summary = "Eliminar Enzima", description = "Remove uma enzima da base de dados.")
+    @Operation(summary = "Eliminar Enzima", description = "Remove uma enzima da base de dados. Requer ADMIN.")
     @DeleteMapping("/{id}")
     ResponseEntity<Void> deleteEnzyme(@PathVariable UUID id);
 }

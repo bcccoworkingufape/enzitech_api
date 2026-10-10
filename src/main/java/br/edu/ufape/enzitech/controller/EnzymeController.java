@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -32,18 +33,21 @@ public class EnzymeController implements EnzymeApi {
         return ResponseEntity.ok(EnzymeResponseDTO.fromEntity(enzymeService.findById(id)));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public ResponseEntity<EnzymeResponseDTO> createEnzyme(EnzymeRequestDTO dto) {
         Enzyme created = enzymeService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(EnzymeResponseDTO.fromEntity(created));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public ResponseEntity<EnzymeResponseDTO> updateEnzyme(UUID id, EnzymeRequestDTO dto) {
         Enzyme updated = enzymeService.update(id, dto);
         return ResponseEntity.ok(EnzymeResponseDTO.fromEntity(updated));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public ResponseEntity<Void> deleteEnzyme(UUID id) {
         enzymeService.delete(id);

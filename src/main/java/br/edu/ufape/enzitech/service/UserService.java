@@ -9,14 +9,19 @@ import br.edu.ufape.enzitech.model.enums.Role;
 import br.edu.ufape.enzitech.repository.ExperimentRepository;
 import br.edu.ufape.enzitech.repository.TreatmentRepository;
 import br.edu.ufape.enzitech.repository.UserRepository;
+import br.edu.ufape.enzitech.security.ClientIp;
+import br.edu.ufape.enzitech.security.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -29,6 +34,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final ExperimentRepository experimentRepository;
     private final TreatmentRepository treatmentRepository;
+    private final RateLimiter rateLimiter;
 
     public Page<User> findAll(Pageable pageable) {
         return userRepository.findAll(pageable);
@@ -41,6 +47,8 @@ public class UserService {
 
     @Transactional
     public User create(UserRequestDTO dto) {
+        rateLimiter.check("signup:ip:" + ClientIp.current(), 10, Duration.ofHours(1));
+
         if (userRepository.findByEmail(dto.email()).isPresent()) {
             throw new EmailAlreadyRegisteredException();
         }
@@ -58,7 +66,11 @@ public class UserService {
     }
 
     @Transactional
-    public User update(UUID id, UserRequestDTO dto) {
+    public User update(UUID id, UserRequestDTO dto, User requester) {
+        if (requester.getRole() != Role.ADMIN && !requester.getId().equals(id)) {
+            log.warn("Tentativa de editar outro usuário negada: requester={} alvo={}", requester.getEmail(), id);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
+        }
         User user = findById(id);
 
         userRepository.findByEmail(dto.email())
@@ -72,6 +84,7 @@ public class UserService {
         
         if (dto.password() != null && !dto.password().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.password()));
+            user.setCredentialsUpdatedAt(LocalDateTime.now());
         }
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
