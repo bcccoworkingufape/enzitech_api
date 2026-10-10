@@ -52,8 +52,8 @@ public class ExperimentController implements ExperimentApi {
     }
 
     @Override
-    public ResponseEntity<ExperimentResponseDTO> getExperimentById(UUID id) {
-        return ResponseEntity.ok(ExperimentResponseDTO.fromEntity(experimentService.findById(id)));
+    public ResponseEntity<ExperimentResponseDTO> getExperimentById(UUID id, CustomUserDetails userDetails) {
+        return ResponseEntity.ok(ExperimentResponseDTO.fromEntity(experimentService.findOwnedById(id, userDetails.getUser())));
     }
 
     @Override
@@ -63,47 +63,52 @@ public class ExperimentController implements ExperimentApi {
     }
 
     @Override
-    public ResponseEntity<ExperimentResponseDTO> updateExperiment(UUID id, ExperimentRequestDTO dto) {
-        Experiment updated = experimentService.update(id, dto);
+    public ResponseEntity<ExperimentResponseDTO> updateExperiment(UUID id, ExperimentRequestDTO dto, CustomUserDetails userDetails) {
+        Experiment updated = experimentService.update(id, dto, userDetails.getUser());
         return ResponseEntity.ok(ExperimentResponseDTO.fromEntity(updated));
     }
 
     @Override
-    public ResponseEntity<Void> deleteExperiment(UUID id) {
-        experimentService.delete(id);
+    public ResponseEntity<Void> deleteExperiment(UUID id, CustomUserDetails userDetails) {
+        experimentService.delete(id, userDetails.getUser());
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    public ResponseEntity<List<RepetitionResponseDTO>> getRepetitions(UUID id) {
+    public ResponseEntity<List<RepetitionResponseDTO>> getRepetitions(UUID id, CustomUserDetails userDetails) {
+        experimentService.findOwnedById(id, userDetails.getUser());
         return ResponseEntity.ok(calculateExperimentService.getRepetitions(id));
     }
 
     @Override
-    public ResponseEntity<RepetitionResponseDTO> previewRepetition(UUID id, SaveRepetitionRequestDTO dto) {
+    public ResponseEntity<RepetitionResponseDTO> previewRepetition(UUID id, SaveRepetitionRequestDTO dto, CustomUserDetails userDetails) {
+        experimentService.findOwnedById(id, userDetails.getUser());
         return ResponseEntity.ok(calculateExperimentService.previewRepetition(id, dto));
     }
 
     @Override
-    public ResponseEntity<ExperimentResponseDTO> saveRepetition(UUID id, SaveRepetitionRequestDTO dto) {
+    public ResponseEntity<ExperimentResponseDTO> saveRepetition(UUID id, SaveRepetitionRequestDTO dto, CustomUserDetails userDetails) {
+        experimentService.findOwnedById(id, userDetails.getUser());
         return ResponseEntity.ok(calculateExperimentService.saveRepetition(id, dto));
     }
 
     @Override
-    public ResponseEntity<Map<String, List<EnzymeResponseDTO>>> getEnzymesByExperiment(UUID id, Object body) {
-        
+    public ResponseEntity<Map<String, List<EnzymeResponseDTO>>> getEnzymesByExperiment(UUID id, Object body, CustomUserDetails userDetails) {
+        experimentService.findOwnedById(id, userDetails.getUser());
+
         List<EnzymeResponseDTO> enzymes = experimentService.getEnzymesByExperiment(id)
                 .stream()
                 .map(EnzymeResponseDTO::fromExperimentEnzyme)
                 .toList();
 
         Map<String, List<EnzymeResponseDTO>> response = Map.of("enzymes", enzymes);
-        
+
         return ResponseEntity.ok(response);
     }
 
     @Override
-    public ResponseEntity<ExperimentResultWrapperDTO> getTotalResult(UUID id) {
+    public ResponseEntity<ExperimentResultWrapperDTO> getTotalResult(UUID id, CustomUserDetails userDetails) {
+        experimentService.findOwnedById(id, userDetails.getUser());
         List<TotalResultExperimentDTO> totalResultList = calculateExperimentService.getTotalResult(id);
 
         ExperimentResultWrapperDTO wrapper = new ExperimentResultWrapperDTO(totalResultList);
@@ -112,12 +117,14 @@ public class ExperimentController implements ExperimentApi {
     }
 
     @Override
-    public ResponseEntity<ExperimentIntegrityResponseDTO> verifyIntegrity(UUID id) {
+    public ResponseEntity<ExperimentIntegrityResponseDTO> verifyIntegrity(UUID id, CustomUserDetails userDetails) {
+        experimentService.findOwnedById(id, userDetails.getUser());
         return ResponseEntity.ok(ExperimentIntegrityResponseDTO.fromResult(resultSignatureService.verifyIntegrity(id)));
     }
 
     @Override
-    public ResponseEntity<List<ExperimentSignatureResponseDTO>> getIntegrityHistory(UUID id) {
+    public ResponseEntity<List<ExperimentSignatureResponseDTO>> getIntegrityHistory(UUID id, CustomUserDetails userDetails) {
+        experimentService.findOwnedById(id, userDetails.getUser());
         List<ExperimentSignatureResponseDTO> history = resultSignatureService.getHistory(id).stream()
                 .map(ExperimentSignatureResponseDTO::fromEntity)
                 .toList();

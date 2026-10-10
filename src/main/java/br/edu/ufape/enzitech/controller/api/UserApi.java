@@ -20,11 +20,11 @@ import java.util.UUID;
 @Tag(name = "Users", description = "Endpoints para gestão de utilizadores")
 public interface UserApi {
 
-    @Operation(summary = "Listar usuários", description = "Devolve todos os usuários paginados.")
+    @Operation(summary = "Listar usuários", description = "Devolve todos os usuários paginados. Requer ADMIN.")
     @GetMapping
     ResponseEntity<Page<UserResponseDTO>> getAllUsers(Pageable pageable);
 
-    @Operation(summary = "Procurar usuário", description = "Devolve um usuário pelo seu ID.")
+    @Operation(summary = "Procurar usuário", description = "Devolve um usuário pelo seu ID. Requer ADMIN.")
     @GetMapping("/{id}")
     ResponseEntity<UserResponseDTO> getUserById(@PathVariable UUID id);
 
@@ -32,11 +32,15 @@ public interface UserApi {
     @PostMapping
     ResponseEntity<UserResponseDTO> createUser(@RequestBody @Valid UserRequestDTO dto);
 
-    @Operation(summary = "Atualizar usuário", description = "Atualiza os dados de um usuário existente.")
+    @Operation(summary = "Atualizar usuário", description = "Atualiza os dados de um usuário existente. Permitido para o próprio usuário ou ADMIN.")
     @PutMapping("/{id}")
-    ResponseEntity<UserResponseDTO> updateUser(@PathVariable UUID id, @RequestBody @Valid UserRequestDTO dto);
+    ResponseEntity<UserResponseDTO> updateUser(
+            @PathVariable UUID id,
+            @RequestBody @Valid UserRequestDTO dto,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 
-    @Operation(summary = "Eliminar usuário", description = "Elimina um usuário da base de dados.")
+    @Operation(summary = "Eliminar usuário", description = "Elimina um usuário da base de dados. Requer ADMIN.")
     @DeleteMapping("/{id}")
     ResponseEntity<Void> deleteUser(@PathVariable UUID id);
 

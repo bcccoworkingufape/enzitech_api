@@ -5,8 +5,10 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import br.edu.ufape.enzitech.dto.request.EnzymeRequestDTO;
 import br.edu.ufape.enzitech.model.Enzyme;
@@ -25,7 +27,7 @@ public class EnzymeService {
 
     public Enzyme findById(UUID id) {
         return enzymeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Enzima não encontrada."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Enzima não encontrada."));
     }
 
     @Transactional

@@ -9,8 +9,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import br.edu.ufape.enzitech.dto.request.ExperimentEnzymeRequestDTO;
 import br.edu.ufape.enzitech.dto.request.ExperimentRequestDTO;
@@ -62,14 +64,32 @@ public class ExperimentService {
 
     public Experiment findById(UUID id) {
         return experimentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Experimento não encontrado."));
+                .orElseThrow(ExperimentService::experimentNotFound);
+    }
+
+    public Experiment findOwnedById(UUID id, User user) {
+        Experiment experiment = findById(id);
+        if (!isOwner(experiment.getUser(), user)) {
+            throw experimentNotFound();
+        }
+        return experiment;
+    }
+
+    private static ResponseStatusException experimentNotFound() {
+        return new ResponseStatusException(HttpStatus.NOT_FOUND, "Experimento não encontrado.");
+    }
+
+    private static boolean isOwner(User owner, User user) {
+        return owner != null && user != null && owner.getId().equals(user.getId());
     }
 
     @Transactional
     public Experiment create(ExperimentRequestDTO dto, User user) {
-        List<Treatment> treatments = treatmentRepository.findAllById(dto.processes());
-        if (treatments.isEmpty()) {
-            throw new RuntimeException("Nenhum tratamento (processo) válido encontrado.");
+        Set<UUID> requestedTreatmentIds = new HashSet<>(dto.processes());
+        List<Treatment> treatments = treatmentRepository.findAllById(requestedTreatmentIds);
+        if (treatments.size() != requestedTreatmentIds.size()
+                || treatments.stream().anyMatch(treatment -> !isOwner(treatment.getUser(), user))) {
+            throw new EntityNotFoundException("Tratamento não encontrado.");
         }
 
         Experiment experiment = new Experiment();
@@ -107,8 +127,8 @@ public class ExperimentService {
     }
 
     @Transactional
-    public Experiment update(UUID id, ExperimentRequestDTO dto) {
-        Experiment experiment = findById(id);
+    public Experiment update(UUID id, ExperimentRequestDTO dto, User user) {
+        Experiment experiment = findOwnedById(id, user);
         experiment.setName(dto.name());
         experiment.setDescription(dto.description());
         experiment.setRepetitions(dto.repetitions());
@@ -158,6 +178,7 @@ public class ExperimentService {
             if (activeSourceIds.contains(treatmentId)) continue;
 
             Treatment treatment = treatmentRepository.findById(treatmentId)
+                    .filter(candidate -> isOwner(candidate.getUser(), experiment.getUser()))
                     .orElseThrow(() -> new EntityNotFoundException("Tratamento não encontrado: " + treatmentId));
             experimentTreatmentRepository.save(buildExperimentTreatment(experiment, treatment));
         }
@@ -294,8 +315,8 @@ public class ExperimentService {
     }
 
     @Transactional
-    public void delete(UUID id) {
-        Experiment experiment = findById(id);
+    public void delete(UUID id, User user) {
+        Experiment experiment = findOwnedById(id, user);
         experimentRepository.delete(experiment);
     }
 }

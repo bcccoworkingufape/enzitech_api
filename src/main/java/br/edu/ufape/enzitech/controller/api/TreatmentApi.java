@@ -19,7 +19,10 @@ public interface TreatmentApi {
 
     @Operation(summary = "Listar Tratamentos", description = "Devolve todos os tratamentos associados a um dado experimento.")
     @GetMapping("/experiment/{experimentId}")
-    ResponseEntity<List<TreatmentResponseDTO>> getTreatmentsByExperiment(@PathVariable UUID experimentId);
+    ResponseEntity<List<TreatmentResponseDTO>> getTreatmentsByExperiment(
+            @PathVariable UUID experimentId,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 
     @Operation(summary = "Criar Tratamento", description = "Regista um novo tratamento na base de dados.")
     @PostMapping
@@ -36,5 +39,8 @@ public interface TreatmentApi {
 
     @Operation(summary = "Eliminar Tratamento", description = "Faz a eliminação lógica do tratamento caso não existam resultados.")
     @DeleteMapping("/{id}")
-    ResponseEntity<Void> deleteTreatment(@PathVariable UUID id);
+    ResponseEntity<Void> deleteTreatment(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 }
