@@ -44,7 +44,10 @@ public interface ExperimentApi {
 
     @Operation(summary = "Buscar Experimento", description = "Busca um experimento pelo ID.")
     @GetMapping("/{id}")
-    ResponseEntity<ExperimentResponseDTO> getExperimentById(@PathVariable UUID id);
+    ResponseEntity<ExperimentResponseDTO> getExperimentById(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 
     @Operation(summary = "Criar Experimento", description = "Cria um novo experimento associado ao utilizador logado.")
     @PostMapping
@@ -56,48 +59,67 @@ public interface ExperimentApi {
     @Operation(summary = "Atualizar Experimento", description = "Atualiza nome, descrição, repetições e a seleção de tratamentos/enzimas de um experimento. Tratamentos/enzimas removidos que já possuem repetições concluídas são preservados como histórico inativo, nunca apagados.")
     @PutMapping("/{id}")
     ResponseEntity<ExperimentResponseDTO> updateExperiment(
-            @PathVariable UUID id, 
-            @RequestBody @Valid ExperimentRequestDTO dto
+            @PathVariable UUID id,
+            @RequestBody @Valid ExperimentRequestDTO dto,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     );
 
     @Operation(summary = "Deletar Experimento", description = "Faz o soft delete do experimento.")
     @DeleteMapping("/{id}")
-    ResponseEntity<Void> deleteExperiment(@PathVariable UUID id);
+    ResponseEntity<Void> deleteExperiment(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 
     @Operation(summary = "Listar Enzimas do Experimento", description = "Busca as enzimas associadas a um experimento (via POST para manter compatibilidade com o legado).")
     @PostMapping("/get-enzymes/{id}")
     ResponseEntity<Map<String, List<EnzymeResponseDTO>>> getEnzymesByExperiment(
             @PathVariable UUID id,
-            @RequestBody(required = false) Object body
+            @RequestBody(required = false) Object body,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     );
 
     @Operation(summary = "Listar Repetições", description = "Lista todos os slots de repetição (pendentes e concluídos) do experimento.")
     @GetMapping("/{id}/repetitions")
-    ResponseEntity<List<RepetitionResponseDTO>> getRepetitions(@PathVariable UUID id);
+    ResponseEntity<List<RepetitionResponseDTO>> getRepetitions(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 
     @Operation(summary = "Pré-visualizar Repetição", description = "Calcula o resultado de uma repetição sem persistir.")
     @PostMapping("/{id}/repetitions/preview")
     ResponseEntity<RepetitionResponseDTO> previewRepetition(
             @PathVariable UUID id,
-            @RequestBody @Valid SaveRepetitionRequestDTO dto
+            @RequestBody @Valid SaveRepetitionRequestDTO dto,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     );
 
     @Operation(summary = "Salvar Repetição", description = "Calcula e salva uma única repetição, de forma parcial/isolada — não exige que as demais repetições estejam preenchidas.")
     @PutMapping("/{id}/repetitions")
     ResponseEntity<ExperimentResponseDTO> saveRepetition(
             @PathVariable UUID id,
-            @RequestBody @Valid SaveRepetitionRequestDTO dto
+            @RequestBody @Valid SaveRepetitionRequestDTO dto,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     );
 
     @Operation(summary = "Obter Resultado Total do Experimento")
     @GetMapping("/get-total-result/{id}")
-    ResponseEntity<ExperimentResultWrapperDTO> getTotalResult(@PathVariable UUID id);
+    ResponseEntity<ExperimentResultWrapperDTO> getTotalResult(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 
     @Operation(summary = "Verificar Integridade dos Resultados", description = "Recalcula o hash SHA-256 dos resultados e compara com a assinatura corrente do experimento (gerada no último fechamento, progress = 100%), detectando alterações feitas após a assinatura.")
     @GetMapping("/{id}/integrity")
-    ResponseEntity<ExperimentIntegrityResponseDTO> verifyIntegrity(@PathVariable UUID id);
+    ResponseEntity<ExperimentIntegrityResponseDTO> verifyIntegrity(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 
     @Operation(summary = "Histórico de Assinaturas", description = "Lista todas as assinaturas (hashes) geradas ao longo dos fechamentos do experimento, da mais recente para a mais antiga. Cada reabertura (ex.: adição de tratamentos/enzimas) seguida de novo fechamento gera uma nova entrada, preservando o histórico anterior.")
     @GetMapping("/{id}/integrity/history")
-    ResponseEntity<List<ExperimentSignatureResponseDTO>> getIntegrityHistory(@PathVariable UUID id);
+    ResponseEntity<List<ExperimentSignatureResponseDTO>> getIntegrityHistory(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
+    );
 }

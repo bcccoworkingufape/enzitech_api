@@ -55,8 +55,11 @@ public class TreatmentService {
     }
 
     @Transactional
-    public void delete(UUID id) {
+    public void delete(UUID id, User user) {
         Treatment treatment = findById(id);
+        if (treatment.getUser() == null || !treatment.getUser().getId().equals(user.getId())) {
+            throw new EntityNotFoundException("Tratamento não encontrado com o id: " + id);
+        }
         log.info("Tratamento removido: id={}, nome={}", treatment.getId(), treatment.getName());
         treatmentRepository.delete(treatment);
     }

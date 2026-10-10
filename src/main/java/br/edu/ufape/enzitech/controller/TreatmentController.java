@@ -5,6 +5,7 @@ import br.edu.ufape.enzitech.dto.request.TreatmentRequestDTO;
 import br.edu.ufape.enzitech.dto.response.TreatmentResponseDTO;
 import br.edu.ufape.enzitech.model.Treatment;
 import br.edu.ufape.enzitech.security.CustomUserDetails;
+import br.edu.ufape.enzitech.service.ExperimentService;
 import br.edu.ufape.enzitech.service.TreatmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,8 +21,11 @@ public class TreatmentController implements TreatmentApi {
 
     private final TreatmentService treatmentService;
 
+    private final ExperimentService experimentService;
+
     @Override
-    public ResponseEntity<List<TreatmentResponseDTO>> getTreatmentsByExperiment(UUID experimentId) {
+    public ResponseEntity<List<TreatmentResponseDTO>> getTreatmentsByExperiment(UUID experimentId, CustomUserDetails userDetails) {
+        experimentService.findOwnedById(experimentId, userDetails.getUser());
         List<TreatmentResponseDTO> treatments = treatmentService.findByExperiment(experimentId)
                 .stream()
                 .map(TreatmentResponseDTO::fromExperimentTreatment)
@@ -49,8 +53,8 @@ public class TreatmentController implements TreatmentApi {
     }
 
     @Override
-    public ResponseEntity<Void> deleteTreatment(UUID id) {
-        treatmentService.delete(id);
+    public ResponseEntity<Void> deleteTreatment(UUID id, CustomUserDetails userDetails) {
+        treatmentService.delete(id, userDetails.getUser());
         return ResponseEntity.noContent().build();
     }
 }
