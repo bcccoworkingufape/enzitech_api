@@ -5,9 +5,11 @@ import br.edu.ufape.enzitech.exception.EmailAlreadyRegisteredException;
 import br.edu.ufape.enzitech.exception.RoleNotAllowedException;
 import br.edu.ufape.enzitech.exception.UserNotFoundException;
 import br.edu.ufape.enzitech.model.User;
+import br.edu.ufape.enzitech.model.UserAvatar;
 import br.edu.ufape.enzitech.model.enums.Role;
 import br.edu.ufape.enzitech.repository.ExperimentRepository;
 import br.edu.ufape.enzitech.repository.TreatmentRepository;
+import br.edu.ufape.enzitech.repository.UserAvatarRepository;
 import br.edu.ufape.enzitech.repository.UserRepository;
 import br.edu.ufape.enzitech.security.ClientIp;
 import br.edu.ufape.enzitech.security.RateLimiter;
@@ -19,10 +21,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Slf4j
@@ -35,6 +40,7 @@ public class UserService {
     private final ExperimentRepository experimentRepository;
     private final TreatmentRepository treatmentRepository;
     private final RateLimiter rateLimiter;
+    private final UserAvatarRepository userAvatarRepository;
 
     public Page<User> findAll(Pageable pageable) {
         return userRepository.findAll(pageable);
@@ -107,13 +113,62 @@ public class UserService {
         eraseUserData(user);
     }
 
+    public UserAvatar findAvatar(UUID id, User requester) {
+        if (requester.getRole() != Role.ADMIN && !requester.getId().equals(id)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
+        }
+        return userAvatarRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Foto de perfil não encontrada."));
+    }
+
+    @Transactional
+    public User updateAvatar(User requester, MultipartFile file) {
+        rateLimiter.check("avatar:user:" + requester.getId(), 20, Duration.ofHours(1));
+
+        byte[] content;
+        try {
+            content = file.getBytes();
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não foi possível ler a imagem enviada.");
+        }
+        AvatarImage image = AvatarImage.inspect(content);
+
+        User user = findById(requester.getId());
+        LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
+
+        UserAvatar avatar = userAvatarRepository.findById(user.getId()).orElseGet(UserAvatar::new);
+        avatar.setUserId(user.getId());
+        avatar.setContentType(image.contentType());
+        avatar.setContent(content);
+        avatar.setUpdatedAt(now);
+        userAvatarRepository.save(avatar);
+
+        user.setAvatarUpdatedAt(now);
+        User saved = userRepository.save(user);
+        log.info("Foto de perfil atualizada: id={}, tipo={}, bytes={}, {}x{}",
+                saved.getId(), image.contentType(), content.length, image.width(), image.height());
+        return saved;
+    }
+
+    @Transactional
+    public User deleteAvatar(User requester) {
+        User user = findById(requester.getId());
+        userAvatarRepository.deleteById(user.getId());
+        user.setAvatarUpdatedAt(null);
+        User saved = userRepository.save(user);
+        log.info("Foto de perfil removida: id={}", saved.getId());
+        return saved;
+    }
+
     private void eraseUserData(User user) {
         experimentRepository.findByUserId(user.getId()).forEach(experimentRepository::delete);
         treatmentRepository.findByUserId(user.getId()).forEach(treatmentRepository::delete);
+        userAvatarRepository.deleteById(user.getId());
 
         user.setName("Usuário excluído");
         user.setEmail("deleted-" + user.getId() + "@enzitech.local");
         user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setAvatarUpdatedAt(null);
         userRepository.saveAndFlush(user);
 
         userRepository.delete(user);
