@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
@@ -66,6 +67,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         log.warn("Parâmetro inválido: {}", ex.getName());
         return error(HttpStatus.BAD_REQUEST, "Parâmetro inválido: " + ex.getName());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, String>> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+        log.warn("Upload acima do limite: {}", ex.getMessage());
+        return error(HttpStatus.CONTENT_TOO_LARGE, "Arquivo muito grande.");
     }
 
     @ExceptionHandler(ResponseStatusException.class)
