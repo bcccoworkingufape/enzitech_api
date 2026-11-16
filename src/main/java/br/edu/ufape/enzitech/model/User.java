@@ -47,6 +47,9 @@ public class User extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "avatar_updated_at")
+    private LocalDateTime avatarUpdatedAt;
+
 
     @PrePersist
     protected void onCreate() {
