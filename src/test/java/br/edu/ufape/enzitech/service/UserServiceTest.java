@@ -2,9 +2,11 @@ package br.edu.ufape.enzitech.service;
 
 import br.edu.ufape.enzitech.dto.request.UserRequestDTO;
 import br.edu.ufape.enzitech.model.User;
+import br.edu.ufape.enzitech.model.UserAvatar;
 import br.edu.ufape.enzitech.model.enums.Role;
 import br.edu.ufape.enzitech.repository.ExperimentRepository;
 import br.edu.ufape.enzitech.repository.TreatmentRepository;
+import br.edu.ufape.enzitech.repository.UserAvatarRepository;
 import br.edu.ufape.enzitech.repository.UserRepository;
 import br.edu.ufape.enzitech.security.RateLimiter;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,6 +25,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,6 +38,7 @@ class UserServiceTest {
     @Mock private ExperimentRepository experimentRepository;
     @Mock private TreatmentRepository treatmentRepository;
     @Mock private RateLimiter rateLimiter;
+    @Mock private UserAvatarRepository userAvatarRepository;
 
     @InjectMocks
     private UserService userService;
@@ -76,6 +81,67 @@ class UserServiceTest {
         when(userRepository.save(target)).thenReturn(target);
 
         assertThat(userService.update(target.getId(), dto, admin)).isSameAs(target);
+    }
+
+    @Test
+    void commonUserCannotReadAnotherUsersAvatar() {
+        User requester = user(Role.USER);
+
+        assertThatThrownBy(() -> userService.findAvatar(UUID.randomUUID(), requester))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
+
+        verify(userAvatarRepository, never()).findById(any());
+    }
+
+    @Test
+    void adminCanReadAnotherUsersAvatar() {
+        User admin = user(Role.ADMIN);
+        UUID targetId = UUID.randomUUID();
+        UserAvatar avatar = new UserAvatar();
+        when(userAvatarRepository.findById(targetId)).thenReturn(Optional.of(avatar));
+
+        assertThat(userService.findAvatar(targetId, admin)).isSameAs(avatar);
+    }
+
+    @Test
+    void uploadingAvatarStoresDetectedTypeAndBumpsVersion() {
+        User requester = user(Role.USER);
+        when(userRepository.findById(requester.getId())).thenReturn(Optional.of(requester));
+        when(userAvatarRepository.findById(requester.getId())).thenReturn(Optional.empty());
+        when(userRepository.save(requester)).thenReturn(requester);
+        // Content-Type declarado pelo cliente é ignorado; vale o que os bytes dizem.
+        MockMultipartFile file = new MockMultipartFile("file", "foto.jpg", "image/jpeg", AvatarImageTest.png(256, 256));
+
+        userService.updateAvatar(requester, file);
+
+        assertThat(requester.getAvatarUpdatedAt()).isNotNull();
+        verify(userAvatarRepository).save(argThat(a ->
+                a.getUserId().equals(requester.getId()) && a.getContentType().equals("image/png")));
+    }
+
+    @Test
+    void invalidAvatarIsRejectedWithoutTouchingTheDatabase() {
+        User requester = user(Role.USER);
+        MockMultipartFile file = new MockMultipartFile("file", "foto.png", "image/png", "<svg/>".getBytes());
+
+        assertThatThrownBy(() -> userService.updateAvatar(requester, file))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+
+        verify(userAvatarRepository, never()).save(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void deletingOwnAccountAlsoErasesAvatar() {
+        User requester = user(Role.USER);
+        requester.setAvatarUpdatedAt(java.time.LocalDateTime.now());
+
+        userService.deleteOwnAccount(requester);
+
+        verify(userAvatarRepository).deleteById(requester.getId());
+        assertThat(requester.getAvatarUpdatedAt()).isNull();
     }
 
     private static User user(Role role) {
